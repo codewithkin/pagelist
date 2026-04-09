@@ -1,0 +1,19 @@
+{
+  "expo": {
+    "scheme": "pagelist",
+    "userInterfaceStyle": "automatic",
+    "orientation": "default",
+    "web": {
+      "bundler": "metro"
+    },
+    "name": "pagelist",
+    "slug": "pagelist",
+    "plugins": [
+      "expo-font"
+    ],
+    "experiments": {
+      "typedRoutes": true,
+      "reactCompiler": true
+    }
+  }
+}

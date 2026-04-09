@@ -1,0 +1,3 @@
+{
+  "extends": "@pagelist/config/tsconfig.base.json",
+}
