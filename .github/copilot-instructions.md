@@ -264,3 +264,603 @@ If you find yourself writing the same thing in both `apps/web` and `apps/native`
 7. Compose the screen/page in `apps/web` and `apps/native` using the above
 
 This is the direction of dependency. Never start from step 6 and work backwards.
+
+# PageList Design System Skill
+
+## Purpose
+This skill forces UI generation toward a **specific editorial-luxury web aesthetic** instead of the default AI stack of:
+- generic shadcn dashboard cards
+- gradient-heavy hero sections
+- lucide icon spam
+- rounded blobs and SaaS clichés
+- excessive visual noise pretending to be polish
+
+The target reference is a **quiet, premium, book-publisher-inspired storefront** based on the provided layout. The result should feel like:
+- independent literary brand
+- editorial landing page
+- restrained luxury
+- print-inspired composition
+- calm confidence
+
+PageList is a **digital bookstore for PDF books**. The interface should feel like a curated reading space, not a startup template.
+
+---
+
+## Core Design Philosophy
+
+### 1. Editorial before startup
+Design like a **book launch microsite** or **publisher catalogue**, not like a B2B app.
+
+UI should prioritize:
+- typography
+- composition
+- whitespace
+- rhythm
+- image framing
+- calm hierarchy
+
+Do **not** prioritize:
+- bright productized gradients
+- giant feature cards
+- icon-led communication
+- glassmorphism
+- flashy motion
+- "tech" visual language
+
+### 2. Quiet luxury, not visual hype
+The reference works because it is understated. It uses:
+- warm neutrals
+- thin dividers
+- serif-display typography
+- compact navigation
+- restrained accent color
+- spacious layouts
+
+Every choice should feel deliberate, not decorative.
+
+### 3. Books are the visual heroes
+Book covers are the primary color and texture source in the interface. The system chrome should remain neutral so the content stands out.
+
+### 4. Print logic over app logic
+Think in terms of:
+- spreads
+- columns
+- sections
+- captions
+- pull quotes
+- catalogue rows
+- editorial alignment
+
+Not:
+- widget stacks
+- app tiles
+- analytics blocks
+- marketing feature grids
+
+---
+
+## Visual Identity
+
+### Aesthetic keywords
+Use these as the governing style language:
+- editorial
+- literary
+- premium
+- warm minimal
+- cultured
+- print-inspired
+- restrained
+- curated
+- soft-neutral
+- refined
+
+### Anti-keywords
+Avoid these completely:
+- futuristic
+- neon
+- glassy
+- cyber
+- playful startup
+- over-illustrated
+- generic SaaS
+- crypto aesthetic
+- AI-generated dashboard feel
+- Dribbble gradients
+
+---
+
+## Color System
+
+The palette should come from the screenshot’s atmosphere: warm paper backgrounds, black type, muted grays, and a restrained golden accent.
+
+### Base palette
+```txt
+Background / canvas:        #E9DFD1
+Surface / card:             #F7F3EE
+Surface alt / section:      #EFE7DD
+Primary text:               #161312
+Secondary text:             #4F463F
+Muted text:                 #7A6F67
+Hairline border:            #D8CEC2
+Strong border:              #C7B9AA
+Accent gold:                #D9A826
+Accent gold hover:          #BF901D
+Deep ink brown:             #241C18
+White:                      #FFFFFF
+```
+
+### Color usage rules
+- Use **warm off-white and paper tones** as the dominant surfaces.
+- Keep black/ink text high contrast and elegant.
+- Use the gold accent sparingly for:
+  - buttons
+  - active states
+  - small highlights
+  - inline emphasis
+- Do not introduce random secondary brand colors unless content demands it.
+- Book covers may add color, but UI framing must stay neutral.
+
+### Strict prohibitions
+- No large gradients.
+- No electric blues, purples, or neon accents in the shell.
+- No saturated CTA overload.
+- No colored shadows.
+
+---
+
+## Typography System
+
+Typography is the backbone of this system.
+
+### Typeface roles
+Use a **high-contrast editorial serif** for major headlines and a **clean readable sans-serif** for UI/body.
+
+Recommended combinations:
+- **Display serif:** Cormorant Garamond, DM Serif Display, Playfair Display, or Canela-like alternatives
+- **UI sans:** Inter, Manrope, Instrument Sans, or Satoshi-like alternative
+
+### Hierarchy
+
+#### Display / Hero
+- Large serif headlines
+- Tight but elegant line-height
+- Upper/lowercase preferred over all caps, except for occasional editorial labels
+- Use scale, not boldness, for drama
+
+#### Section headings
+- Serif or refined small-caps styling
+- Spacious, not heavy
+- Often left-aligned
+
+#### Body
+- Sans-serif
+- Moderate line-height
+- Slightly smaller than default SaaS body copy
+- Comfortable reading width
+
+#### Labels / metadata / nav
+- Small uppercase or tightly tracked sans-serif
+- Light weight
+- Conservative sizing
+
+### Typography rules
+- Avoid oversized bold sans-serif hero headlines.
+- Avoid trendy oversized gradient text.
+- Avoid too many font weights.
+- Let typography create elegance through proportion and spacing.
+
+### Suggested scale
+```txt
+Hero display:      64–92px
+H1:                44–56px
+H2:                30–40px
+H3:                22–28px
+Body large:        18–20px
+Body:              15–17px
+Small/meta:        11–13px
+```
+
+---
+
+## Layout Principles
+
+### Overall structure
+The reference uses a **magazine-like modular grid** with large content blocks and vertical rhythm.
+
+Use:
+- wide outer margins
+- generous section padding
+- clean columns
+- strong alignment
+- full-width sections broken into editorial modules
+
+### Grid behavior
+Desktop:
+- 12-column grid or equivalent custom editorial grid
+- allow asymmetry when composition benefits from it
+- hero can be split into content column + visual column
+
+Tablet:
+- compress into balanced stacked sections
+- preserve breathing room
+
+Mobile:
+- collapse cleanly
+- keep hierarchy intact
+- do not convert everything into generic stacked cards with thick shadows
+
+### Spacing rhythm
+Use a spacing scale that feels print-like rather than app-like.
+
+Suggested spacing tokens:
+```txt
+4, 8, 12, 16, 24, 32, 48, 64, 96, 128
+```
+
+But favor:
+- 24+
+- 32+
+- 48+
+- 64+
+
+This system should breathe.
+
+---
+
+## Shape Language
+
+### Corners
+- Soft but restrained corner radii
+- Mostly **8px to 20px**
+- Large containers can use 20–28px if needed
+- Avoid pill overload
+
+### Borders
+- Thin borders are important
+- Use hairline separators and subtle framing
+- Border usage should evoke paper sections and catalogue framing
+
+### Shadows
+- Very soft, nearly invisible
+- Prefer layering through color and border rather than obvious shadows
+- No floating dashboard cards with aggressive blur
+
+---
+
+## Components
+
+## Buttons
+Buttons should feel like editorial action markers, not app-store CTAs.
+
+### Primary button
+- warm gold fill
+- dark text
+- compact height
+- modest horizontal padding
+- square-to-soft corners
+- no icon unless absolutely necessary
+
+### Secondary button
+- neutral surface
+- thin border
+- dark text
+
+### Button rules
+- No gradient buttons
+- No giant rounded-full pills
+- No left icons by default
+- No excessive hover animation
+
+Example tone:
+- “Browse PDFs”
+- “Read Sample”
+- “View Collection”
+- “Continue Reading”
+
+## Navigation
+Navigation should be small, quiet, and confident.
+
+Rules:
+- small uppercase or micro-sans links
+- wide horizontal spacing
+- no chunky nav pills
+- no heavy underline effects
+- use a very clean top bar
+
+Logo/wordmark should feel literary, not technical.
+
+## Cards
+Avoid generic SaaS cards.
+
+Use cards only when they resemble:
+- book listings
+- editorial blocks
+- quote panels
+- collection modules
+- author or publisher sections
+
+Card behavior:
+- thin border or soft paper background
+- minimal shadow
+- image-led
+- generous padding
+
+## Book item
+A book item is one of the core primitives.
+
+Structure:
+- cover image
+- title
+- author or imprint
+- short format/meta line
+- optional price or CTA
+
+Rules:
+- cover image should dominate
+- text beneath should be elegant and compact
+- do not clutter with badges, ratings, icons, and gimmicks
+
+## Quote / testimonial block
+Treat as a pull quote.
+
+Style:
+- centered or offset in a spacious block
+- serif or italicized body
+- quiet attribution line
+- lots of negative space
+
+## Newsletter / signup
+Should feel like a magazine subscription panel.
+
+Style:
+- framed section
+- one clear headline
+- one sentence of supporting copy
+- refined input + button row
+- no noisy trust badges
+
+## Footer
+Footer should be structured like a publishing site.
+
+Possible sections:
+- PageList summary
+- Browse
+- Collections
+- Account
+- Newsletter
+- Social links kept subtle
+
+Use thin dividers and muted text.
+
+---
+
+## Imagery Rules
+
+### Photography
+When using photography:
+- keep it warm and natural
+- avoid hyper-commercial stock imagery
+- favor candid, editorial, intimate scenes
+- framing should feel like an author portrait, reading moment, or bookshelf scene
+
+### Product images
+For PageList, book/PDF covers are primary assets.
+
+Rules:
+- show covers clearly
+- avoid excessive 3D mockup gimmicks
+- use flat cover presentation or subtle realistic depth
+- let cover art bring vibrancy
+
+### Decorative graphics
+Allowed only if subtle:
+- faint botanical lines
+- paper textures
+- quiet ornaments
+- divider flourishes
+
+Never let decoration overpower content.
+
+---
+
+## Motion Principles
+Motion should be nearly invisible.
+
+Use:
+- soft fade-ins
+- subtle translateY on reveal
+- gentle hover shifts
+- smooth opacity transitions
+
+Avoid:
+- springy bounce everywhere
+- spinning icons
+- oversized parallax
+- flashy entrance choreography
+- motion that makes the design feel like a tech landing page
+
+Recommended timing:
+- 160ms to 280ms for interactions
+- 300ms to 500ms for reveals
+
+Easing should feel calm and polished.
+
+---
+
+## Content Tone
+Copy should match the visual system.
+
+Use language that is:
+- calm
+- literate
+- confident
+- concise
+- curated
+
+Avoid copy that sounds like:
+- hyper-growth SaaS
+- startup hustle culture
+- over-enthusiastic product marketing
+- generic AI-generated persuasion
+
+Good direction:
+- “Curated reads for thoughtful readers.”
+- “Browse independent titles in digital format.”
+- “A quieter way to discover your next book.”
+
+Bad direction:
+- “Supercharge your reading workflow.”
+- “Unlock powerful reading experiences.”
+- “Revolutionary PDF commerce platform.”
+
+---
+
+## PageList-Specific UI Translation
+
+This reference image is author-centric. For PageList, translate it into a **curated digital bookstore**.
+
+### Keep from the reference
+- warm neutral palette
+- serif-led editorial hierarchy
+- premium spacing
+- large content-led hero
+- modular catalogue sections
+- soft panels and thin borders
+- restrained gold accents
+
+### Adapt for PageList
+Replace author-site modules with bookstore modules:
+- New Release → Featured PDF / Editor’s Pick
+- About Me → About PageList / Why this collection exists
+- Podcast / interview modules → Reading lists / curated shelves / featured publishers
+- Testimonials → reader notes / editorial recommendations
+- Newsletter → new release digest
+- Book grid → catalogue of PDF titles
+
+### Possible homepage structure
+1. Quiet top nav
+2. Featured release hero
+3. Curated collections
+4. New and notable titles
+5. Publisher or author spotlight
+6. Reading quote or editorial statement
+7. Membership/newsletter block
+8. Footer
+
+---
+
+## shadcn Override Rules
+
+If shadcn is used, it must be **subordinated** to this system. Do not let default component styling dictate the product identity.
+
+### What to override immediately
+- default radius tokens
+- default shadows
+- default muted colors
+- default card look
+- default button sizing
+- default input styling
+- default font stack
+
+### shadcn usage rules
+- Use shadcn as a structural primitive library, not as a design language.
+- Strip out anything that feels like a dashboard.
+- Remove default visual signatures that make the UI look recognizable as “AI-made shadcn.”
+
+### Specifically avoid
+- Card + CardContent everywhere
+- icons inside every button
+- gradient hero banners
+- dashboard sidebar patterns unless a page truly requires it
+- default accordion/alert/dialog styling without customization
+
+---
+
+## CSS / Token Direction
+
+### Suggested tokens
+```css
+:root {
+  --background: #E9DFD1;
+  --surface: #F7F3EE;
+  --surface-alt: #EFE7DD;
+  --foreground: #161312;
+  --muted-foreground: #7A6F67;
+  --border: #D8CEC2;
+  --border-strong: #C7B9AA;
+  --accent: #D9A826;
+  --accent-hover: #BF901D;
+  --radius-sm: 8px;
+  --radius-md: 14px;
+  --radius-lg: 20px;
+  --shadow-soft: 0 8px 30px rgba(22, 19, 18, 0.04);
+}
+```
+
+### Font direction
+```css
+--font-display: "Cormorant Garamond", "DM Serif Display", serif;
+--font-body: "Inter", "Manrope", sans-serif;
+```
+
+---
+
+## AI Prompt Guardrails
+
+When generating UI, follow these hard constraints:
+
+1. Make the design editorial and literary, not startup-like.
+2. Use warm neutral paper tones and restrained gold accents.
+3. Use serif display typography for major headings.
+4. Prefer thin borders and soft surfaces over shadows and gradients.
+5. Avoid lucide-react icon overuse.
+6. Avoid generic SaaS section patterns.
+7. Let book covers and typography create visual interest.
+8. Keep motion subtle and premium.
+9. Preserve spacious layout and calm hierarchy.
+10. The result should feel like a premium bookstore or publisher website, not a dashboard template.
+
+---
+
+## Copy-Paste Build Prompt
+
+Use this when asking AI to generate PageList UI:
+
+```md
+Design this interface for PageList as a premium editorial digital bookstore. The visual language must be based on a warm neutral, print-inspired, literary aesthetic — not a generic shadcn SaaS dashboard.
+
+Use:
+- warm paper backgrounds
+- thin borders
+- serif display typography for major headings
+- refined sans-serif for body and navigation
+- restrained gold accents
+- spacious layout
+- modular editorial sections
+- subtle shadows only
+- book covers as the main source of color
+
+Avoid:
+- gradients
+- glassmorphism
+- default shadcn card aesthetics
+- dashboard vibes
+- lucide-react icon spam
+- loud CTA styling
+- startup hero patterns
+
+The UI should feel like a curated publisher/bookshop website with quiet luxury and strong typographic hierarchy.
+```
+
+---
+
+## Final Standard
+Before approving any UI, ask:
+
+- Does this look like a literary brand or like a startup template?
+- If all icons disappeared, would typography and spacing still carry the design?
+- Are the book covers the stars, or is the UI chrome competing with them?
+- Does the page feel calm, premium, and curated?
+- Would this still look good in mostly monochrome with only one accent color?
+
+If the answer is no, it is drifting back into generic AI UI.
