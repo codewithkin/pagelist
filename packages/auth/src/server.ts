@@ -1,27 +1,45 @@
-import { betterAuth } from "better-auth";
-import { prismaAdapter } from "better-auth/adapters/prisma";
-import prisma from "@pagelist/db";
-import { env } from "@pagelist/env/server";
+import { SignJWT, jwtVerify } from "jose";
 
-export const auth = betterAuth({
-  database: prismaAdapter(prisma, {
-    provider: "postgresql",
-  }),
-  secret: env.BETTER_AUTH_SECRET,
-  baseURL: env.BETTER_AUTH_URL,
-  trustedOrigins: [env.CORS_ORIGIN],
-  emailAndPassword: {
-    enabled: true,
-  },
-  user: {
-    additionalFields: {
-      role: {
-        type: "string",
-        required: false,
-        input: true,
-      },
-    },
-  },
-});
+const ALG = "HS256";
 
-export type Auth = typeof auth;
+export interface JwtPayload {
+  sub: string;    // userId
+  sid: string;    // sessionId
+}
+
+export async function signToken(
+  payload: JwtPayload,
+  secret: string,
+  expiresIn = "7d",
+): Promise<string> {
+  const key = new TextEncoder().encode(secret);
+  return new SignJWT({ ...payload })
+    .setProtectedHeader({ alg: ALG })
+    .setIssuedAt()
+    .setExpirationTime(expiresIn)
+    .sign(key);
+}
+
+export async function verifyToken(
+  token: string,
+  secret: string,
+): Promise<JwtPayload | null> {
+  try {
+    const key = new TextEncoder().encode(secret);
+    const { payload } = await jwtVerify(token, key, { algorithms: [ALG] });
+    return { sub: payload.sub as string, sid: payload["sid"] as string };
+  } catch {
+    return null;
+  }
+}
+
+export async function hashPassword(password: string): Promise<string> {
+  return Bun.password.hash(password, "argon2id");
+}
+
+export async function verifyPassword(
+  password: string,
+  hash: string,
+): Promise<boolean> {
+  return Bun.password.verify(password, hash);
+}

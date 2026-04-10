@@ -5,15 +5,15 @@
   "type": "module",
   "exports": {
     "./server": "./src/server.ts",
-    "./client": "./src/client.ts"
+    "./client": "./src/client.ts",
+    "./types": "./src/types.ts"
   },
   "dependencies": {
-    "better-auth": "^1.2.0",
-    "@pagelist/db": "workspace:*",
-    "@pagelist/env": "workspace:*"
+    "jose": "^5.9.6"
   },
   "devDependencies": {
     "typescript": "^5",
-    "@pagelist/config": "workspace:*"
+    "@pagelist/config": "workspace:*",
+    "@types/bun": "catalog:"
   }
 }
