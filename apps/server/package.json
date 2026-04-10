@@ -12,6 +12,7 @@
   "dependencies": {
     "dotenv": "catalog:",
     "zod": "catalog:",
+    "nodemailer": "^6.9.7",
     "@pagelist/env": "workspace:*",
     "@pagelist/db": "workspace:*",
     "@pagelist/auth": "workspace:*",

@@ -15,6 +15,10 @@ const signInSchema = z.object({
   password: z.string().min(1, "Password is required."),
 });
 
+const verifyEmailSchema = z.object({
+  token: z.string().min(1, "Verification token is required."),
+});
+
 function meta(c: Context) {
   return {
     ipAddress: c.req.header("x-forwarded-for") ?? c.req.header("cf-connecting-ip"),
@@ -22,6 +26,16 @@ function meta(c: Context) {
   };
 }
 
+function getVerificationBaseUrl(c: Context): string {
+  const host = c.req.header("host") || "localhost:3000";
+  const protocol = c.req.header("x-forwarded-proto") || "http";
+  return `${protocol}://${host}`;
+}
+
+/**
+ * POST /api/auth/sign-up
+ * Initiates signup: creates user, sends verification email, returns pending status.
+ */
 export async function handleSignUp(c: Context) {
   const body = await c.req.json().catch(() => null);
   const parsed = signUpSchema.safeParse(body);
@@ -31,12 +45,38 @@ export async function handleSignUp(c: Context) {
   }
 
   try {
-    const session = await AuthService.signUp(parsed.data, meta(c));
-    setTokenCookie(c, session.token, new Date(session.expiresAt));
-    return created(c, session);
+    const verificationBaseUrl = getVerificationBaseUrl(c);
+    const result = await AuthService.initiateSignUp(parsed.data, verificationBaseUrl);
+    return created(c, {
+      pendingVerification: true,
+      email: result.email,
+      message: result.message,
+    });
   } catch (e) {
     const message = e instanceof Error ? e.message : "Registration failed.";
     return err(c, message, 409);
+  }
+}
+
+/**
+ * POST /api/auth/verify-email
+ * Verifies email token and creates session.
+ */
+export async function handleVerifyEmail(c: Context) {
+  const body = await c.req.json().catch(() => null);
+  const parsed = verifyEmailSchema.safeParse(body);
+
+  if (!parsed.success) {
+    return err(c, parsed.error.issues[0]?.message ?? "Invalid input.", 422);
+  }
+
+  try {
+    const session = await AuthService.verifyEmail(parsed.data.token, meta(c));
+    setTokenCookie(c, session.token, new Date(session.expiresAt));
+    return ok(c, session);
+  } catch (e) {
+    const message = e instanceof Error ? e.message : "Email verification failed.";
+    return err(c, message, 400);
   }
 }
 

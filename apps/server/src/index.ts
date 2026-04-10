@@ -3,6 +3,7 @@ import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { logger } from "hono/logger";
 import authRouter from "@/routes/auth";
+import onboardingRouter from "@/routes/onboarding";
 import workspaceRouter from "@/routes/workspace";
 import libraryRouter from "@/routes/library";
 
@@ -20,6 +21,7 @@ app.use(
 );
 
 app.route("/api/auth", authRouter);
+app.route("/api/onboarding", onboardingRouter);
 app.route("/api/workspace", workspaceRouter);
 app.route("/api/library", libraryRouter);
 
