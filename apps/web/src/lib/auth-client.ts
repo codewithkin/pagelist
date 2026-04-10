@@ -1,4 +1,4 @@
-import { createClient } from "@pagelist/auth/client";
+import { createAuthClient } from "@pagelist/auth/client";
 import { env } from "@pagelist/env/web";
 
-export const authClient = createClient(env.NEXT_PUBLIC_SERVER_URL);
+export const authClient = createAuthClient(env.NEXT_PUBLIC_SERVER_URL);

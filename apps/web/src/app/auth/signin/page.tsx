@@ -22,13 +22,10 @@ export default function SignInPage() {
     setLoading(true);
     setError("");
 
-    const { error: authError } = await authClient.signIn.email({
-      email,
-      password,
-    });
+    const { error: authError } = await authClient.signIn({ email, password });
 
     if (authError) {
-      setError(authError.message ?? "Invalid email or password.");
+      setError(authError ?? "Invalid email or password.");
       setLoading(false);
       return;
     }

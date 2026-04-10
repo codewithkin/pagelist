@@ -31,7 +31,7 @@ export default function SignUpPage() {
     setLoading(true);
     setError("");
 
-    const { error: authError } = await authClient.signUp.email({
+    const { error: authError } = await authClient.signUp({
       name,
       email,
       password,
@@ -39,7 +39,7 @@ export default function SignUpPage() {
     });
 
     if (authError) {
-      setError(authError.message ?? "Something went wrong. Please try again.");
+      setError(authError ?? "Something went wrong. Please try again.");
       setLoading(false);
       return;
     }

@@ -3,19 +3,19 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { authClient } from "@/lib/auth-client";
+import { useSession } from "@/hooks/use-session";
 
 export default function HomePage() {
   const router = useRouter();
-  const { data: session, isPending } = authClient.useSession();
+  const { session, isPending } = useSession();
 
   useEffect(() => {
     if (!isPending && session) {
       const role = session.user.role;
       if (role === "WRITER") {
-        router.replace("/workspace");
+        router.replace("/workspace" as never);
       } else {
-        router.replace("/library");
+        router.replace("/library" as never);
       }
     }
   }, [session, isPending, router]);
