@@ -1,5 +1,5 @@
 import { useMutation } from "@tanstack/react-query";
-import { apiMutation } from "@/lib/api-client";
+import { apiMutation, ApiError } from "@/lib/api-client";
 
 export interface SignUpResponse {
   pendingVerification: boolean;
@@ -32,6 +32,10 @@ export function useSignUpWithVerification() {
         "/api/auth/sign-up",
         input,
       ),
+    onError: (error) => {
+      // Error message is automatically extracted in apiMutation
+      // Display it in the UI through the error state
+    },
   });
 }
 
@@ -43,5 +47,9 @@ export function useVerifyEmail() {
         "/api/auth/verify-email",
         { token },
       ),
+    onError: (error) => {
+      // Error message is automatically extracted in apiMutation
+      // Display it in the UI through the error state
+    },
   });
 }

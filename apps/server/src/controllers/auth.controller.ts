@@ -41,7 +41,7 @@ export async function handleSignUp(c: Context) {
   const parsed = signUpSchema.safeParse(body);
 
   if (!parsed.success) {
-    return err(c, parsed.error.issues[0]?.message ?? "Invalid input.", 422);
+    return err(c, parsed.error.issues[0]?.message ?? "Please check your input and try again.", 422);
   }
 
   try {
@@ -51,9 +51,16 @@ export async function handleSignUp(c: Context) {
       pendingVerification: true,
       email: result.email,
       message: result.message,
-    });
+    }, "Check your email to verify your account.");
   } catch (e) {
-    const message = e instanceof Error ? e.message : "Registration failed.";
+    let message = "We couldn't create your account. Please try again.";
+    if (e instanceof Error) {
+      if (e.message.includes("already exists")) {
+        message = "This email is already registered. Try signing in instead.";
+      } else {
+        message = e.message;
+      }
+    }
     return err(c, message, 409);
   }
 }
@@ -67,15 +74,24 @@ export async function handleVerifyEmail(c: Context) {
   const parsed = verifyEmailSchema.safeParse(body);
 
   if (!parsed.success) {
-    return err(c, parsed.error.issues[0]?.message ?? "Invalid input.", 422);
+    return err(c, "Invalid verification link. Please check your email again.", 422);
   }
 
   try {
     const session = await AuthService.verifyEmail(parsed.data.token, meta(c));
     setTokenCookie(c, session.token, new Date(session.expiresAt));
-    return ok(c, session);
+    return ok(c, session, "Email verified! Proceeding to onboarding...");
   } catch (e) {
-    const message = e instanceof Error ? e.message : "Email verification failed.";
+    let message = "We couldn't verify your email. Please try again.";
+    if (e instanceof Error) {
+      if (e.message.includes("expired")) {
+        message = "Your verification link has expired (5 minute limit). Please sign up again.";
+      } else if (e.message.includes("Invalid")) {
+        message = "This verification link is invalid. Please check your email again.";
+      } else {
+        message = e.message;
+      }
+    }
     return err(c, message, 400);
   }
 }
@@ -85,15 +101,22 @@ export async function handleSignIn(c: Context) {
   const parsed = signInSchema.safeParse(body);
 
   if (!parsed.success) {
-    return err(c, parsed.error.issues[0]?.message ?? "Invalid input.", 422);
+    return err(c, parsed.error.issues[0]?.message ?? "Please check your input and try again.", 422);
   }
 
   try {
     const session = await AuthService.signIn(parsed.data, meta(c));
     setTokenCookie(c, session.token, new Date(session.expiresAt));
-    return ok(c, session);
+    return ok(c, session, "Welcome back!");
   } catch (e) {
-    const message = e instanceof Error ? e.message : "Sign in failed.";
+    let message = "Invalid email or password. Please try again.";
+    if (e instanceof Error) {
+      if (e.message.includes("verify")) {
+        message = "Please verify your email before signing in. Check your inbox for the verification link.";
+      } else {
+        message = e.message;
+      }
+    }
     return err(c, message, 401);
   }
 }
@@ -102,13 +125,13 @@ export async function handleSignOut(c: Context) {
   const sessionId = c.get("sessionId") as string;
   await AuthService.signOut(sessionId);
   clearTokenCookie(c);
-  return ok(c, null);
+  return ok(c, null, "Signed out successfully.");
 }
 
 export async function handleGetSession(c: Context) {
   const sessionId = c.get("sessionId") as string;
   const session = await AuthService.getSession(sessionId);
-  if (!session) return err(c, "Session not found.", 401);
+  if (!session) return err(c, "Your session has expired. Please sign in again.", 401);
   return ok(c, session);
 }
 
