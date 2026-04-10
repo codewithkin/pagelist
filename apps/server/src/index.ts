@@ -1,3 +1,4 @@
+import { auth } from "@pagelist/auth/server";
 import { env } from "@pagelist/env/server";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
@@ -10,9 +11,15 @@ app.use(
   "/*",
   cors({
     origin: env.CORS_ORIGIN,
-    allowMethods: ["GET", "POST", "OPTIONS"],
+    credentials: true,
+    allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowHeaders: ["Content-Type", "Authorization"],
   }),
 );
+
+app.on(["POST", "GET"], "/api/auth/*", (c) => {
+  return auth.handler(c.req.raw);
+});
 
 app.get("/", (c) => {
   return c.text("OK");
