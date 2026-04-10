@@ -1,0 +1,19 @@
+{
+  "name": "@pagelist/auth",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./server": "./src/server.ts",
+    "./client": "./src/client.ts"
+  },
+  "dependencies": {
+    "better-auth": "^1.2.0",
+    "@pagelist/db": "workspace:*",
+    "@pagelist/env": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "^5",
+    "@pagelist/config": "workspace:*"
+  }
+}
