@@ -3,12 +3,19 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { BookOpen, Eye, EyeOff, Loader2, PenLine } from "lucide-react";
+import { HugeiconsIcon } from "@hugeicons/react";
+import {
+  BookOpen01Icon,
+  ViewIcon,
+  ViewOffSlashIcon,
+  Loading04Icon,
+  PenTool01Icon,
+} from "@hugeicons/core-free-icons";
 import { Button } from "@pagelist/ui/components/button";
 import { Input } from "@pagelist/ui/components/input";
 import { Label } from "@pagelist/ui/components/label";
 import { cn } from "@pagelist/ui/lib/utils";
-import { authClient } from "@/lib/auth-client";
+import { useSignUp } from "@/hooks/use-auth";
 
 export default function SignUpPage() {
   const router = useRouter();
@@ -16,36 +23,27 @@ export default function SignUpPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [role, setRole] = useState<"READER" | "WRITER" | null>(null);
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
-  async function handleSubmit(e: React.FormEvent) {
+  const { mutate: signUp, isPending, error } = useSignUp();
+
+  function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-
-    if (!role) {
-      setError("Please select how you'll use PageList.");
-      return;
-    }
-
-    setLoading(true);
-    setError("");
-
-    const { error: authError } = await authClient.signUp({
-      name,
-      email,
-      password,
-      role,
-    });
-
-    if (authError) {
-      setError(authError ?? "Something went wrong. Please try again.");
-      setLoading(false);
-      return;
-    }
-
-    router.push("/");
+    if (!role) return;
+    signUp(
+      { name, email, password, role },
+      { onSuccess: () => router.push("/") },
+    );
   }
+
+  const errorMessage =
+    !role && !isPending
+      ? null
+      : error instanceof Error
+        ? error.message
+        : error
+          ? "Something went wrong. Please try again."
+          : null;
 
   return (
     <div className="w-full max-w-sm">
@@ -62,9 +60,9 @@ export default function SignUpPage() {
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-5">
-        {error && (
-          <div className="border border-destructive/30 bg-destructive/5 px-4 py-3 text-xs text-destructive">
-            {error}
+        {errorMessage && (
+          <div className="rounded-xl border border-destructive/30 bg-destructive/5 px-4 py-3 text-xs text-destructive">
+            {errorMessage}
           </div>
         )}
 
@@ -108,11 +106,10 @@ export default function SignUpPage() {
               onClick={() => setShowPassword(!showPassword)}
               className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground transition-colors hover:text-foreground"
             >
-              {showPassword ? (
-                <EyeOff className="size-3.5" />
-              ) : (
-                <Eye className="size-3.5" />
-              )}
+              <HugeiconsIcon
+                icon={showPassword ? ViewOffSlashIcon : ViewIcon}
+                size={14}
+              />
             </button>
           </div>
         </div>
@@ -124,18 +121,18 @@ export default function SignUpPage() {
               type="button"
               onClick={() => setRole("READER")}
               className={cn(
-                "flex flex-col items-center gap-2.5 border px-4 py-5 transition-all duration-200",
+                "flex flex-col items-center gap-2.5 rounded-xl border px-4 py-5 transition-all duration-200",
                 role === "READER"
                   ? "border-[#D9A826] bg-[#D9A826]/5"
                   : "border-border hover:border-muted-foreground/40",
               )}
             >
-              <BookOpen
+              <HugeiconsIcon
+                icon={BookOpen01Icon}
+                size={20}
                 className={cn(
-                  "size-5 transition-colors duration-200",
-                  role === "READER"
-                    ? "text-[#D9A826]"
-                    : "text-muted-foreground",
+                  "transition-colors duration-200",
+                  role === "READER" ? "text-[#D9A826]" : "text-muted-foreground",
                 )}
               />
               <span className="text-xs font-medium text-foreground">
@@ -149,18 +146,18 @@ export default function SignUpPage() {
               type="button"
               onClick={() => setRole("WRITER")}
               className={cn(
-                "flex flex-col items-center gap-2.5 border px-4 py-5 transition-all duration-200",
+                "flex flex-col items-center gap-2.5 rounded-xl border px-4 py-5 transition-all duration-200",
                 role === "WRITER"
                   ? "border-[#D9A826] bg-[#D9A826]/5"
                   : "border-border hover:border-muted-foreground/40",
               )}
             >
-              <PenLine
+              <HugeiconsIcon
+                icon={PenTool01Icon}
+                size={20}
                 className={cn(
-                  "size-5 transition-colors duration-200",
-                  role === "WRITER"
-                    ? "text-[#D9A826]"
-                    : "text-muted-foreground",
+                  "transition-colors duration-200",
+                  role === "WRITER" ? "text-[#D9A826]" : "text-muted-foreground",
                 )}
               />
               <span className="text-xs font-medium text-foreground">
@@ -175,12 +172,12 @@ export default function SignUpPage() {
 
         <Button
           type="submit"
-          disabled={loading}
+          disabled={isPending || !role}
           size="lg"
           className="w-full bg-[#D9A826] text-[#161312] hover:bg-[#BF901D]"
         >
-          {loading ? (
-            <Loader2 className="size-4 animate-spin" />
+          {isPending ? (
+            <HugeiconsIcon icon={Loading04Icon} size={16} className="animate-spin" />
           ) : (
             "Create account"
           )}

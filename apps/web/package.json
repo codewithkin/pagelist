@@ -8,18 +8,22 @@
     "start": "next start"
   },
   "dependencies": {
-    "@pagelist/ui": "workspace:*",
+    "@hugeicons/core-free-icons": "^4.1.1",
+    "@hugeicons/react": "^1.1.6",
     "@pagelist/auth": "workspace:*",
-    "lucide-react": "catalog:",
+    "@pagelist/env": "workspace:*",
+    "@pagelist/ui": "workspace:*",
+    "@prisma/client": "catalog:",
+    "@tanstack/react-query": "^5.97.0",
+    "axios": "^1.15.0",
+    "babel-plugin-react-compiler": "^1.0.0",
+    "dotenv": "catalog:",
     "next": "^16.2.0",
     "react": "^19.2.3",
     "react-dom": "^19.2.3",
+    "recharts": "^2.15.3",
     "sonner": "catalog:",
-    "babel-plugin-react-compiler": "^1.0.0",
-    "dotenv": "catalog:",
-    "zod": "catalog:",
-    "@pagelist/env": "workspace:*",
-    "@prisma/client": "catalog:"
+    "zod": "catalog:"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.1.18",

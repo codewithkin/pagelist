@@ -3,35 +3,31 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Eye, EyeOff, Loader2 } from "lucide-react";
+import { HugeiconsIcon } from "@hugeicons/react";
+import { ViewIcon, ViewOffSlashIcon, Loading04Icon } from "@hugeicons/core-free-icons";
 import { Button } from "@pagelist/ui/components/button";
 import { Input } from "@pagelist/ui/components/input";
 import { Label } from "@pagelist/ui/components/label";
-import { authClient } from "@/lib/auth-client";
+import { useSignIn } from "@/hooks/use-auth";
 
 export default function SignInPage() {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
-  async function handleSubmit(e: React.FormEvent) {
+  const { mutate: signIn, isPending, error } = useSignIn();
+
+  function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setLoading(true);
-    setError("");
-
-    const { error: authError } = await authClient.signIn({ email, password });
-
-    if (authError) {
-      setError(authError ?? "Invalid email or password.");
-      setLoading(false);
-      return;
-    }
-
-    router.push("/");
+    signIn(
+      { email, password },
+      { onSuccess: () => router.push("/") },
+    );
   }
+
+  const errorMessage =
+    error instanceof Error ? error.message : error ? "Invalid email or password." : null;
 
   return (
     <div className="w-full max-w-sm">
@@ -48,9 +44,9 @@ export default function SignInPage() {
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-5">
-        {error && (
-          <div className="border border-destructive/30 bg-destructive/5 px-4 py-3 text-xs text-destructive">
-            {error}
+        {errorMessage && (
+          <div className="rounded-xl border border-destructive/30 bg-destructive/5 px-4 py-3 text-xs text-destructive">
+            {errorMessage}
           </div>
         )}
 
@@ -82,23 +78,22 @@ export default function SignInPage() {
               onClick={() => setShowPassword(!showPassword)}
               className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground transition-colors hover:text-foreground"
             >
-              {showPassword ? (
-                <EyeOff className="size-3.5" />
-              ) : (
-                <Eye className="size-3.5" />
-              )}
+              <HugeiconsIcon
+                icon={showPassword ? ViewOffSlashIcon : ViewIcon}
+                size={14}
+              />
             </button>
           </div>
         </div>
 
         <Button
           type="submit"
-          disabled={loading}
+          disabled={isPending}
           size="lg"
           className="w-full bg-[#D9A826] text-[#161312] hover:bg-[#BF901D]"
         >
-          {loading ? (
-            <Loader2 className="size-4 animate-spin" />
+          {isPending ? (
+            <HugeiconsIcon icon={Loading04Icon} size={16} className="animate-spin" />
           ) : (
             "Sign in"
           )}
