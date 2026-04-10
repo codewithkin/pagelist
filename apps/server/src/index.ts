@@ -1,8 +1,8 @@
-import { auth } from "@pagelist/auth/server";
 import { env } from "@pagelist/env/server";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { logger } from "hono/logger";
+import authRouter from "@/routes/auth";
 
 const app = new Hono();
 
@@ -17,12 +17,8 @@ app.use(
   }),
 );
 
-app.on(["POST", "GET"], "/api/auth/*", (c) => {
-  return auth.handler(c.req.raw);
-});
+app.route("/api/auth", authRouter);
 
-app.get("/", (c) => {
-  return c.text("OK");
-});
+app.get("/", (c) => c.text("OK"));
 
 export default app;
