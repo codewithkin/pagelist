@@ -22,7 +22,8 @@
     ],
     "paths": {
       "@/*": ["./src/*"],
-      "@pagelist/ui/*": ["../../packages/ui/src/*"]
+      "@pagelist/ui/*": ["../../packages/ui/src/*"],
+      "@pagelist/auth/*": ["../../packages/auth/src/*"]
     }
   },
   "include": [

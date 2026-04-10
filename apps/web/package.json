@@ -9,6 +9,7 @@
   },
   "dependencies": {
     "@pagelist/ui": "workspace:*",
+    "@pagelist/auth": "workspace:*",
     "lucide-react": "catalog:",
     "next": "^16.2.0",
     "next-themes": "catalog:",
