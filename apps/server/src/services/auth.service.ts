@@ -108,6 +108,44 @@ export async function verifyEmail(
 }
 
 /**
+ * Resend verification email: generates a new token and resends the email.
+ * Only works for unverified accounts. Silently returns success even if account doesn't exist
+ * or is already verified to prevent email enumeration.
+ */
+export async function resendVerificationEmail(
+  email: string,
+  verificationBaseUrl: string,
+): Promise<{ message: string }> {
+  const user = await prisma.user.findUnique({
+    where: { email: email.toLowerCase() },
+  });
+
+  // Silently return if user not found or already verified — prevents email enumeration
+  if (!user || user.emailVerified) {
+    return { message: "Verification email sent. Please check your inbox." };
+  }
+
+  const verificationToken = crypto.randomUUID();
+  const verificationTokenExpiresAt = emailVerificationTokenExpiresAt();
+
+  await prisma.user.update({
+    where: { id: user.id },
+    data: {
+      emailVerificationToken: verificationToken,
+      emailVerificationTokenExpiresAt: verificationTokenExpiresAt,
+    },
+  });
+
+  try {
+    await sendVerificationEmail(user.email, user.name, verificationToken, verificationBaseUrl);
+  } catch (e) {
+    console.error("Failed to send verification email:", e);
+  }
+
+  return { message: "Verification email sent. Please check your inbox." };
+}
+
+/**
  * Original sign up flow (kept for backward compat but now with email check).
  */
 export async function signUp(
