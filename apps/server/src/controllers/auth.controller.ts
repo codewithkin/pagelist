@@ -144,12 +144,16 @@ export async function handleSignIn(c: Context) {
     return ok(c, { session }, "Welcome back!");
   } catch (e) {
     let message = "Invalid email or password. Please try again.";
-    if (e instanceof Error) {
-      if (e.message.includes("verify")) {
-        message = "Please verify your email before signing in. Check your inbox for the verification link.";
-      } else {
-        message = e.message;
-      }
+    const errorMsg = e instanceof Error ? e.message : String(e);
+    
+    console.error(`[Sign-in Error] Email: ${parsed.data.email}, Error: ${errorMsg}`);
+    
+    if (errorMsg.includes("verify")) {
+      message = "Please verify your email before signing in. Check your inbox for the verification link.";
+    } else if (errorMsg.includes("Invalid")) {
+      message = "Invalid email or password. Please try again.";
+    } else {
+      message = errorMsg;
     }
     return err(c, message, 401);
   }
