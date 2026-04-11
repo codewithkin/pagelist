@@ -94,7 +94,7 @@ export async function handleVerifyEmail(c: Context) {
   try {
     const session = await AuthService.verifyEmail(parsed.data.token, meta(c));
     setTokenCookie(c, session.token, new Date(session.expiresAt));
-    return ok(c, session, "Email verified! Proceeding to onboarding...");
+    return ok(c, { session }, "Email verified! Proceeding to onboarding...");
   } catch (e) {
     let message = "We couldn't verify your email. Please try again.";
     if (e instanceof Error) {
@@ -141,7 +141,7 @@ export async function handleSignIn(c: Context) {
   try {
     const session = await AuthService.signIn(parsed.data, meta(c));
     setTokenCookie(c, session.token, new Date(session.expiresAt));
-    return ok(c, session, "Welcome back!");
+    return ok(c, { session }, "Welcome back!");
   } catch (e) {
     let message = "Invalid email or password. Please try again.";
     if (e instanceof Error) {
@@ -215,7 +215,7 @@ export async function handleGetSession(c: Context) {
   const sessionId = c.get("sessionId") as string;
   const session = await AuthService.getSession(sessionId);
   if (!session) return err(c, "Your session has expired. Please sign in again.", 401);
-  return ok(c, session);
+  return ok(c, { session });
 }
 
 function setTokenCookie(c: Context, token: string, expires: Date) {
