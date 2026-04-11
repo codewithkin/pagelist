@@ -1,33 +1,63 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { ViewIcon, ViewOffSlashIcon, Loading04Icon } from "@hugeicons/core-free-icons";
+import { Loading04Icon } from "@hugeicons/core-free-icons";
 import { Button } from "@pagelist/ui/components/button";
 import { Input } from "@pagelist/ui/components/input";
 import { Label } from "@pagelist/ui/components/label";
-import { useSignIn } from "@/hooks/use-auth";
+import { useForgotPassword } from "@/hooks/use-auth";
 
-export default function SignInPage() {
-  const router = useRouter();
+export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
 
-  const { mutate: signIn, isPending, error } = useSignIn();
+  const { mutate: forgotPassword, isPending, error, isSuccess } = useForgotPassword();
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    signIn(
-      { email, password },
-      { onSuccess: () => router.push("/") },
-    );
+    forgotPassword({ email });
   }
 
-  const errorMessage =
-    error instanceof Error ? error.message : error ? "Invalid email or password." : null;
+  const errorMessage = error instanceof Error ? error.message : null;
+
+  if (isSuccess) {
+    return (
+      <div className="w-full max-w-sm text-center">
+        <div className="mb-6 inline-block rounded-full border border-border bg-surface px-4 py-1.5 text-xs tracking-widest text-muted-foreground uppercase">
+          Check your inbox
+        </div>
+        <h1
+          className="mb-4 text-3xl font-light tracking-tight text-foreground"
+          style={{ fontFamily: '"DM Serif Display", Georgia, serif' }}
+        >
+          Email sent
+        </h1>
+        <p className="mb-8 text-sm leading-relaxed text-muted-foreground">
+          If an account exists for <span className="text-foreground">{email}</span>, you will receive a password reset link shortly. The link expires in 15 minutes.
+        </p>
+        <div className="h-px w-full bg-border" />
+        <p className="mt-6 text-xs text-muted-foreground">
+          Didn&apos;t receive it?{" "}
+          <button
+            type="button"
+            onClick={() => forgotPassword({ email })}
+            className="text-foreground transition-colors hover:text-[#D9A826]"
+          >
+            Send again
+          </button>
+        </p>
+        <p className="mt-3 text-xs text-muted-foreground">
+          <Link
+            href="/auth/signin"
+            className="text-foreground transition-colors hover:text-[#D9A826]"
+          >
+            Return to sign in
+          </Link>
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="w-full max-w-sm">
@@ -36,10 +66,10 @@ export default function SignInPage() {
           className="mb-3 text-3xl font-light tracking-tight text-foreground"
           style={{ fontFamily: '"DM Serif Display", Georgia, serif' }}
         >
-          Welcome back
+          Reset your password
         </h1>
         <p className="text-sm text-muted-foreground">
-          Sign in to continue to your collection.
+          Enter your email and we will send you a reset link.
         </p>
       </div>
 
@@ -62,38 +92,6 @@ export default function SignInPage() {
           />
         </div>
 
-        <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <Label htmlFor="password">Password</Label>
-            <Link
-              href="/auth/forgot-password"
-              className="text-xs text-muted-foreground transition-colors hover:text-[#D9A826]"
-            >
-              Forgot password?
-            </Link>
-          </div>
-          <div className="relative">
-            <Input
-              id="password"
-              type={showPassword ? "text" : "password"}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="••••••••"
-              required
-            />
-            <button
-              type="button"
-              onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground transition-colors hover:text-foreground"
-            >
-              <HugeiconsIcon
-                icon={showPassword ? ViewOffSlashIcon : ViewIcon}
-                size={14}
-              />
-            </button>
-          </div>
-        </div>
-
         <Button
           type="submit"
           disabled={isPending}
@@ -103,7 +101,7 @@ export default function SignInPage() {
           {isPending ? (
             <HugeiconsIcon icon={Loading04Icon} size={16} className="animate-spin" />
           ) : (
-            "Sign in"
+            "Send reset link"
           )}
         </Button>
       </form>
@@ -111,12 +109,12 @@ export default function SignInPage() {
       <div className="mt-8 h-px w-full bg-border" />
 
       <p className="mt-6 text-center text-xs text-muted-foreground">
-        Don&apos;t have an account?{" "}
+        Remember your password?{" "}
         <Link
-          href="/auth/signup"
+          href="/auth/signin"
           className="text-foreground transition-colors hover:text-[#D9A826]"
         >
-          Create one
+          Sign in
         </Link>
       </p>
     </div>

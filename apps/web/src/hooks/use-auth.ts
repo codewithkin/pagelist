@@ -90,3 +90,34 @@ export function useSignOut() {
     },
   });
 }
+
+// ---------------------------------------------------------------------------
+// Forgot password mutation
+// ---------------------------------------------------------------------------
+
+interface ForgotPasswordBody {
+  email: string;
+}
+
+export function useForgotPassword() {
+  return useMutation({
+    mutationFn: (data: ForgotPasswordBody) =>
+      apiMutation<null, ForgotPasswordBody>("post", "/api/auth/forgot-password", data),
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Reset password mutation
+// ---------------------------------------------------------------------------
+
+interface ResetPasswordBody {
+  token: string;
+  password: string;
+}
+
+export function useResetPassword() {
+  return useMutation({
+    mutationFn: (data: ResetPasswordBody) =>
+      apiMutation<null, ResetPasswordBody>("post", "/api/auth/reset-password", data),
+  });
+}

@@ -19,6 +19,15 @@ const verifyEmailSchema = z.object({
   token: z.string().min(1, "Verification token is required."),
 });
 
+const forgotPasswordSchema = z.object({
+  email: z.string().email("Invalid email address."),
+});
+
+const resetPasswordSchema = z.object({
+  token: z.string().min(1, "Reset token is required."),
+  password: z.string().min(8, "Password must be at least 8 characters."),
+});
+
 function meta(c: Context) {
   return {
     ipAddress: c.req.header("x-forwarded-for") ?? c.req.header("cf-connecting-ip"),
@@ -118,6 +127,55 @@ export async function handleSignIn(c: Context) {
       }
     }
     return err(c, message, 401);
+  }
+}
+
+/**
+ * POST /api/auth/forgot-password
+ * Sends a password reset email if the account exists.
+ */
+export async function handleForgotPassword(c: Context) {
+  const body = await c.req.json().catch(() => null);
+  const parsed = forgotPasswordSchema.safeParse(body);
+
+  if (!parsed.success) {
+    return err(c, "Please enter a valid email address.", 422);
+  }
+
+  const baseUrl = getVerificationBaseUrl(c);
+  // Always returns success — prevents email enumeration
+  await AuthService.requestPasswordReset(parsed.data.email, baseUrl);
+
+  return ok(c, null, "If an account exists for that email, you will receive a password reset link shortly.");
+}
+
+/**
+ * POST /api/auth/reset-password
+ * Validates the reset token and updates the user's password.
+ */
+export async function handleResetPassword(c: Context) {
+  const body = await c.req.json().catch(() => null);
+  const parsed = resetPasswordSchema.safeParse(body);
+
+  if (!parsed.success) {
+    return err(c, parsed.error.issues[0]?.message ?? "Please check your input and try again.", 422);
+  }
+
+  try {
+    await AuthService.resetPassword(parsed.data.token, parsed.data.password);
+    return ok(c, null, "Your password has been reset. You can now sign in with your new password.");
+  } catch (e) {
+    let message = "We couldn't reset your password. Please try again.";
+    if (e instanceof Error) {
+      if (e.message.includes("expired")) {
+        message = "This reset link has expired (15 minute limit). Please request a new one.";
+      } else if (e.message.includes("Invalid")) {
+        message = "This reset link is invalid. Please request a new one.";
+      } else {
+        message = e.message;
+      }
+    }
+    return err(c, message, 400);
   }
 }
 

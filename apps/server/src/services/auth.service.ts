@@ -2,10 +2,11 @@ import prisma from "@pagelist/db";
 import { hashPassword, verifyPassword, signToken } from "@pagelist/auth/server";
 import { env } from "@pagelist/env/server";
 import type { SignInInput, SignUpInput, SessionData } from "@pagelist/auth/types";
-import { sendVerificationEmail } from "./email.service";
+import { sendVerificationEmail, sendPasswordResetEmail } from "./email.service";
 
 const SESSION_TTL_DAYS = 7;
 const EMAIL_VERIFICATION_TTL_MINUTES = 5;
+const PASSWORD_RESET_TTL_MINUTES = 15;
 
 function sessionExpiresAt(): Date {
   const d = new Date();
@@ -16,6 +17,12 @@ function sessionExpiresAt(): Date {
 function emailVerificationTokenExpiresAt(): Date {
   const d = new Date();
   d.setMinutes(d.getMinutes() + EMAIL_VERIFICATION_TTL_MINUTES);
+  return d;
+}
+
+function passwordResetTokenExpiresAt(): Date {
+  const d = new Date();
+  d.setMinutes(d.getMinutes() + PASSWORD_RESET_TTL_MINUTES);
   return d;
 }
 
@@ -216,4 +223,68 @@ function toSessionData(
       createdAt: user.createdAt.toISOString(),
     },
   };
+}
+
+/**
+ * Request password reset: generates a token and sends the email.
+ * Always returns success to prevent email enumeration.
+ */
+export async function requestPasswordReset(
+  email: string,
+  baseUrl: string,
+): Promise<void> {
+  const user = await prisma.user.findUnique({
+    where: { email: email.toLowerCase() },
+  });
+
+  // Silently return if user not found — prevents email enumeration
+  if (!user) return;
+
+  const resetToken = crypto.randomUUID();
+  const resetTokenExpiresAt = passwordResetTokenExpiresAt();
+
+  await prisma.user.update({
+    where: { id: user.id },
+    data: {
+      passwordResetToken: resetToken,
+      passwordResetTokenExpiresAt: resetTokenExpiresAt,
+    },
+  });
+
+  try {
+    await sendPasswordResetEmail(user.email, user.name, resetToken, baseUrl);
+  } catch (e) {
+    console.error("Failed to send password reset email:", e);
+  }
+}
+
+/**
+ * Reset password: validates the token and updates the user's password.
+ */
+export async function resetPassword(
+  token: string,
+  newPassword: string,
+): Promise<void> {
+  const user = await prisma.user.findUnique({
+    where: { passwordResetToken: token },
+  });
+
+  if (!user) {
+    throw new Error("Invalid or expired reset link.");
+  }
+
+  if (!user.passwordResetTokenExpiresAt || user.passwordResetTokenExpiresAt < new Date()) {
+    throw new Error("This reset link has expired. Please request a new one.");
+  }
+
+  const passwordHash = await hashPassword(newPassword);
+
+  await prisma.user.update({
+    where: { id: user.id },
+    data: {
+      passwordHash,
+      passwordResetToken: null,
+      passwordResetTokenExpiresAt: null,
+    },
+  });
 }

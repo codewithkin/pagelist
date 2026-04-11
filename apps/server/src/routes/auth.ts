@@ -6,6 +6,8 @@ import {
   handleSignOut,
   handleGetSession,
   handleVerifyEmail,
+  handleForgotPassword,
+  handleResetPassword,
 } from "@/controllers/auth.controller";
 
 const router = new Hono();
@@ -15,5 +17,7 @@ router.post("/verify-email", handleVerifyEmail);
 router.post("/sign-in", handleSignIn);
 router.post("/sign-out", requireAuth, handleSignOut);
 router.get("/session", requireAuth, handleGetSession);
+router.post("/forgot-password", handleForgotPassword);
+router.post("/reset-password", handleResetPassword);
 
 export default router;

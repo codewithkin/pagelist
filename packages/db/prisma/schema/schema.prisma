@@ -23,6 +23,8 @@ model User {
   emailVerified                   DateTime?
   emailVerificationToken          String?  @unique
   emailVerificationTokenExpiresAt DateTime?
+  passwordResetToken              String?  @unique
+  passwordResetTokenExpiresAt     DateTime?
   onboardingCompleted             Boolean  @default(false)
   readerGenres                    String?
   writerGenres                    String?
