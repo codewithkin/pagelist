@@ -11,7 +11,7 @@ export function createAuthClient(baseURL: string) {
         credentials: "include",
         headers: {
           "Content-Type": "application/json",
-          ...(options.headers as Record<string, string> | undefined),
+          ...(options.headers as Record<string, string> | undefined),         
         },
       });
       const json = (await res.json()) as T | { error?: string };

@@ -1,1 +1,21 @@
 @import '@pagelist/ui/globals.css';
+
+/* Pagelist design tokens */
+:root {
+  --color-brand-primary: #1B3A2D;
+  --color-brand-accent: #C9A84C;
+  --color-brand-surface: #FAF7F2;
+  --color-brand-surface-raised: #FFFFFF;
+  --color-brand-muted: #6B7280;
+  --color-brand-border: #E5DDD0;
+  --color-brand-danger: #DC2626;
+  --color-brand-success: #16A34A;
+}
+
+@layer base {
+  body {
+    font-family: var(--font-body), 'DM Sans', sans-serif;
+    background-color: var(--color-brand-surface);
+    color: var(--color-brand-primary);
+  }
+}
