@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Loading04Icon } from "@hugeicons/core-free-icons";
@@ -19,6 +19,12 @@ export default function OnboardingPage() {
   const { mutate: completeOnboarding, isPending } = useCompleteOnboarding();
   const [selectedGenres, setSelectedGenres] = useState<string[]>([]);
 
+  useEffect(() => {
+    if (!isSessionLoading && !session?.user) {
+      router.push("/auth/signin");
+    }
+  }, [isSessionLoading, session?.user, router]);
+
   if (isSessionLoading) {
     return (
       <div className="flex h-screen items-center justify-center">
@@ -27,12 +33,7 @@ export default function OnboardingPage() {
     );
   }
 
-  if (!session?.user) {
-    router.push("/auth/signin");
-    return null;
-  }
-
-  const isReader = session.user.role === "READER";
+  const isReader = session?.user?.role === "READER";
   const genres = isReader ? READER_GENRES : WRITER_GENRES;
   const title = isReader
     ? "What genres interest you?"
