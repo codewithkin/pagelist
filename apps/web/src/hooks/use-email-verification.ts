@@ -8,15 +8,17 @@ export interface SignUpResponse {
 }
 
 export interface VerifyEmailResponse {
-  user: {
-    id: string;
-    name: string;
-    email: string;
-    role: "READER" | "WRITER";
-    createdAt: string;
+  session: {
+    user: {
+      id: string;
+      name: string;
+      email: string;
+      role: "READER" | "WRITER";
+      createdAt: string;
+    };
+    token: string;
+    expiresAt: string;
   };
-  token: string;
-  expiresAt: string;
 }
 
 export function useSignUpWithVerification() {

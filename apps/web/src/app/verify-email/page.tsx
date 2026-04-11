@@ -30,7 +30,7 @@ export default function VerifyEmailPage() {
       onSuccess: (data) => {
         // Set session and redirect to onboarding
         if (setSession) {
-          setSession(data);
+          setSession(data.session);
         }
         router.push("/onboarding");
       },
