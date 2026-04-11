@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 import { Button } from "@pagelist/ui/components/button";
 import { Input } from "@pagelist/ui/components/input";
@@ -10,13 +10,24 @@ import { Avatar, AvatarFallback, AvatarImage } from "@pagelist/ui/components/ava
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@pagelist/ui/components/tooltip";
 import { PageHeader } from "@/components/ui/page-header";
 import { DangerZone } from "@/components/ui/danger-zone";
+import { useSession } from "@/hooks/use-auth";
 import { toast } from "sonner";
 
 export default function ReaderSettingsPage() {
-  const [name, setName] = useState("Reader Name");
-  const [email] = useState("reader@example.com");
+  const { session } = useSession();
+
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
   const [avatarUrl] = useState<string | null>(null);
   const [isSavingProfile, setIsSavingProfile] = useState(false);
+
+  // Load session data on mount
+  useEffect(() => {
+    if (session?.user) {
+      setName(session.user.name);
+      setEmail(session.user.email);
+    }
+  }, [session]);
 
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -26,7 +37,8 @@ export default function ReaderSettingsPage() {
   const [showConfirm, setShowConfirm] = useState(false);
   const [isSavingPassword, setIsSavingPassword] = useState(false);
 
-  const isOAuth = false; // TODO: determine from session
+  // Check if user is OAuth
+  const isOAuth = !session?.user;
 
   async function handleSaveProfile() {
     setIsSavingProfile(true);
@@ -111,6 +123,7 @@ export default function ReaderSettingsPage() {
             <Input
               id="email"
               value={email}
+              onChange={(e) => setEmail(e.target.value)}
               readOnly={isOAuth}
               className="border-[var(--color-brand-border)]"
             />

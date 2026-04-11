@@ -7,25 +7,38 @@ import { cn } from "@pagelist/ui/lib/utils";
 import { Button } from "@pagelist/ui/components/button";
 import { ROUTES } from "@/lib/routes";
 
-const FONT_SIZES = [
-  { label: "S", value: 16 },
-  { label: "M", value: 18 },
-  { label: "L", value: 22 },
-] as const;
-
 const STORAGE_KEY_PREFIX = "pagelist-reader-";
 
-// TODO: replace with real API hook
+// Fetch book content from API
 function useBookContent(id: string) {
-  return {
-    title: "Sample Book Title",
-    chapters: [
-      { title: "Chapter 1", content: "<p>Chapter one content goes here. This would be the full chapter rendered as HTML from the API.</p>" },
-      { title: "Chapter 2", content: "<p>Chapter two content goes here.</p>" },
-      { title: "Chapter 3", content: "<p>Chapter three content goes here.</p>" },
-    ],
-    isLoading: false,
-  };
+  const [data, setData] = useState<{ title: string; chapters: Array<{ title: string; content: string }> } | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await fetch(`/api/browse/${id}`);
+        if (!res.ok) throw new Error("Failed to fetch book");
+        const book = await res.json();
+        // TODO: Fetch actual chapters from backend
+        // For now, return demo chapters
+        setData({
+          title: book.title,
+          chapters: [
+            { title: "Chapter 1", content: "<p>Start reading the content of chapter one here...</p>" },
+            { title: "Chapter 2", content: "<p>Continue with chapter two...</p>" },
+            { title: "Chapter 3", content: "<p>More content in chapter three...</p>" },
+          ],
+        });
+      } catch {
+        setData({ title: "Unable to load book", chapters: [] });
+      } finally {
+        setIsLoading(false);
+      }
+    })();
+  }, [id]);
+
+  return { title: data?.title ?? "", chapters: data?.chapters ?? [], isLoading };
 }
 
 export default function ReaderBookPage({ params }: { params: Promise<{ id: string }> }) {

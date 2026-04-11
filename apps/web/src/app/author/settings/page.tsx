@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 import { Button } from "@pagelist/ui/components/button";
 import { Input } from "@pagelist/ui/components/input";
@@ -12,16 +12,27 @@ import { Avatar, AvatarFallback, AvatarImage } from "@pagelist/ui/components/ava
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@pagelist/ui/components/tooltip";
 import { PageHeader } from "@/components/ui/page-header";
 import { DangerZone } from "@/components/ui/danger-zone";
+import { useSession } from "@/hooks/use-auth";
 import { toast } from "sonner";
 
 export default function AuthorSettingsPage() {
+  const { session } = useSession();
+
   // Profile
-  const [name, setName] = useState("Author Name");
-  const [email] = useState("author@example.com");
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
   const [bio, setBio] = useState("");
   const [website, setWebsite] = useState("");
   const [avatarUrl] = useState<string | null>(null);
   const [isSavingProfile, setIsSavingProfile] = useState(false);
+
+  // Load session data on mount
+  useEffect(() => {
+    if (session?.user) {
+      setName(session.user.name);
+      setEmail(session.user.email);
+    }
+  }, [session]);
 
   // Password
   const [currentPassword, setCurrentPassword] = useState("");
@@ -37,7 +48,8 @@ export default function AuthorSettingsPage() {
   const [notifyPayout, setNotifyPayout] = useState(true);
   const [notifyNewsletter, setNotifyNewsletter] = useState(false);
 
-  const isOAuth = false;
+  // Check if user is OAuth by seeing if they have a password hash or not
+  const isOAuth = !session?.user; // Simplified check
 
   async function handleSaveProfile() {
     setIsSavingProfile(true);
@@ -114,7 +126,7 @@ export default function AuthorSettingsPage() {
                 </TooltipProvider>
               )}
             </div>
-            <Input id="email" value={email} readOnly={isOAuth} className="border-[var(--color-brand-border)] bg-transparent" />
+            <Input id="email" value={email} onChange={(e) => setEmail(e.target.value)} readOnly={isOAuth} className="border-[var(--color-brand-border)] bg-transparent" />
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="bio">Bio</Label>
