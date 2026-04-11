@@ -20,6 +20,7 @@ import { PageHeader } from "@/components/ui/page-header";
 import { PriceTag } from "@/components/ui/price-tag";
 import { ROUTES } from "@/lib/routes";
 import { toast } from "sonner";
+import { useCreateBook } from "@/hooks/use-books";
 
 const GENRES = [
   "Fiction", "Non-Fiction", "Self-Help", "Technology", "Science",
@@ -81,7 +82,7 @@ function saveDraft(data: FormData) {
 export default function NewBookPage() {
   const router = useRouter();
   const [step, setStep] = useState(0);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const createBook = useCreateBook();
 
   const [form, setForm] = useState<FormData>(() => ({
     title: "",
@@ -111,16 +112,23 @@ export default function NewBookPage() {
   }
 
   async function handleSubmit() {
-    setIsSubmitting(true);
     try {
-      // TODO: API call (multipart upload)
+      const priceCents = Math.round(Number(form.price) * 100);
+      await createBook.mutateAsync({
+        title: form.title.trim(),
+        description: form.description.trim(),
+        genre: form.genre,
+        language: form.language,
+        priceCents,
+        coverUrl: null,
+        fileUrl: null,
+        status: "PUBLISHED",
+      });
       localStorage.removeItem(STORAGE_KEY);
       toast.success("Book created successfully.");
       router.push(ROUTES.AUTHOR_BOOKS);
-    } catch {
-      toast.error("Failed to create book.");
-    } finally {
-      setIsSubmitting(false);
+    } catch (e: unknown) {
+      toast.error(e instanceof Error ? e.message : "Failed to create book.");
     }
   }
 
@@ -191,10 +199,10 @@ export default function NewBookPage() {
         ) : (
           <Button
             onClick={handleSubmit}
-            disabled={isSubmitting}
+            disabled={createBook.isPending}
             className="bg-black text-white rounded-full hover:bg-neutral-800"
           >
-            {isSubmitting && <Loader2 size={16} className="mr-1.5 animate-spin" />}
+            {createBook.isPending && <Loader2 size={16} className="mr-1.5 animate-spin" />}
             Publish Book
           </Button>
         )}

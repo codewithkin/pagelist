@@ -1,21 +1,25 @@
+"use client";
+
 import Link from "next/link";
 import Image from "next/image";
 import { format } from "date-fns";
 import { PageHeader } from "@/components/ui/page-header";
 import { EmptyState } from "@/components/ui/empty-state";
+import { LoadingSkeleton } from "@/components/ui/loading-skeleton";
 import { PriceTag } from "@/components/ui/price-tag";
 import { ROUTES } from "@/lib/routes";
-import type { Order } from "@/types";
-
-// TODO: replace with server-side fetch
-const orders: Order[] = [];
+import { useOrders } from "@/hooks/use-browse";
 
 export default function ReaderOrdersPage() {
+  const { data: orders = [], isLoading } = useOrders();
+
   return (
     <div className="space-y-8">
       <PageHeader title="Order History" subtitle="Every book you have purchased." />
 
-      {orders.length === 0 ? (
+      {isLoading ? (
+        <LoadingSkeleton variant="order-row" count={5} />
+      ) : orders.length === 0 ? (
         <EmptyState
           title="No orders yet"
           description="When you purchase a book, it will appear here."

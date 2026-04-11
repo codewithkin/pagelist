@@ -6,6 +6,10 @@ import authRouter from "@/routes/auth";
 import onboardingRouter from "@/routes/onboarding";
 import workspaceRouter from "@/routes/workspace";
 import libraryRouter from "@/routes/library";
+import booksRouter from "@/routes/books";
+import earningsRouter from "@/routes/earnings";
+import payoutsRouter from "@/routes/payouts";
+import browseRouter from "@/routes/browse";
 
 const app = new Hono();
 
@@ -24,6 +28,10 @@ app.route("/api/auth", authRouter);
 app.route("/api/onboarding", onboardingRouter);
 app.route("/api/workspace", workspaceRouter);
 app.route("/api/library", libraryRouter);
+app.route("/api/books", booksRouter);
+app.route("/api/earnings", earningsRouter);
+app.route("/api/payouts", payoutsRouter);
+app.route("/api/browse", browseRouter);
 
 app.get("/", (c) => c.text("OK"));
 

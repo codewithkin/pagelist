@@ -12,6 +12,8 @@ import { BookCard } from "@/components/ui/book-card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { LoadingSkeleton } from "@/components/ui/loading-skeleton";
 import type { Book } from "@/types";
+import { useBrowseBooks, usePurchaseBook } from "@/hooks/use-browse";
+import { toast } from "sonner";
 
 const GENRES = ["Fiction", "Non-Fiction", "Science", "History", "Biography", "Fantasy", "Romance", "Mystery", "Self-Help", "Technology"];
 const SORT_OPTIONS = [
@@ -20,9 +22,6 @@ const SORT_OPTIONS = [
   { value: "price-low", label: "Price: Low to High" },
   { value: "price-high", label: "Price: High to Low" },
 ];
-
-// TODO: replace with real API hook
-const MOCK_BOOKS: Book[] = [];
 
 export default function ReaderBrowsePage() {
   const router = useRouter();
@@ -33,9 +32,8 @@ export default function ReaderBrowsePage() {
   const [sort, setSort] = useState(searchParams.get("sort") ?? "recent");
   const [buyBook, setBuyBook] = useState<Book | null>(null);
 
-  // TODO: replace with real API hook
-  const books = MOCK_BOOKS;
-  const isLoading = false;
+  const { data: allBooks = [], isLoading } = useBrowseBooks();
+  const purchaseBook = usePurchaseBook();
 
   const hasFilters = activeGenre !== null || sort !== "recent";
 
@@ -55,11 +53,35 @@ export default function ReaderBrowsePage() {
     router.replace(str ? `?${str}` : "?", { scroll: false });
   }, [search, activeGenre, sort, router]);
 
-  const filtered = books.filter((b) => {
-    if (search && !b.title.toLowerCase().includes(search.toLowerCase())) return false;
-    if (activeGenre && b.genre !== activeGenre) return false;
-    return true;
-  });
+  const filtered = useMemo(() => {
+    let list = allBooks.filter((b) => {
+      if (search && !b.title.toLowerCase().includes(search.toLowerCase())) return false;
+      if (activeGenre && b.genre !== activeGenre) return false;
+      return true;
+    });
+
+    if (sort === "best-selling") {
+      list = [...list].sort((a, b) => b.totalSales - a.totalSales);
+    } else if (sort === "price-low") {
+      list = [...list].sort((a, b) => a.price - b.price);
+    } else if (sort === "price-high") {
+      list = [...list].sort((a, b) => b.price - a.price);
+    } else {
+      list = [...list].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    }
+    return list;
+  }, [allBooks, search, activeGenre, sort]);
+
+  async function handleConfirmPurchase() {
+    if (!buyBook) return;
+    try {
+      await purchaseBook.mutateAsync(buyBook.id);
+      toast.success(`You now own "${buyBook.title}". Find it in your library.`);
+      setBuyBook(null);
+    } catch (e: unknown) {
+      toast.error(e instanceof Error ? e.message : "Purchase failed.");
+    }
+  }
 
   return (
     <div className="space-y-8">
@@ -117,15 +139,19 @@ export default function ReaderBrowsePage() {
           <LoadingSkeleton variant="book-card" count={12} />
         ) : filtered.length === 0 ? (
           <EmptyState
-            title="No books found"
-            description="Try adjusting your filters or search term."
+            title={allBooks.length === 0 ? "No books available yet" : "No books found"}
+            description={allBooks.length === 0
+              ? "Check back soon — authors are uploading new titles."
+              : "Try adjusting your filters or search term."}
             actionLabel={hasFilters ? "Clear filters" : undefined}
             onAction={hasFilters ? clearFilters : undefined}
           />
         ) : (
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {filtered.map((book) => (
-              <BookCard key={book.id} book={book} variant="browse" />
+              <div key={book.id} onClick={() => setBuyBook(book)} className="cursor-pointer">
+                <BookCard book={book} variant="browse" />
+              </div>
             ))}
           </div>
         )}
@@ -143,11 +169,19 @@ export default function ReaderBrowsePage() {
           </DialogHeader>
           <DialogFooter>
             <Button variant="outline" onClick={() => setBuyBook(null)} className="rounded-full">Cancel</Button>
-            <Button className="bg-black text-white rounded-full hover:bg-neutral-800">
+            <Button
+              onClick={handleConfirmPurchase}
+              disabled={purchaseBook.isPending}
+              className="bg-black text-white rounded-full hover:bg-neutral-800"
+            >
               Complete Purchase
             </Button>
           </DialogFooter>
         </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
       </Dialog>
     </div>
   );

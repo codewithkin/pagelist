@@ -12,6 +12,7 @@ import {
   SelectValue,
 } from "@pagelist/ui/components/select";
 import { Input } from "@pagelist/ui/components/input";
+import { Skeleton } from "@pagelist/ui/components/skeleton";
 import {
   Table,
   TableBody,
@@ -24,33 +25,9 @@ import { PageHeader } from "@/components/ui/page-header";
 import { StatCard } from "@/components/ui/stat-card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { PriceTag } from "@/components/ui/price-tag";
-import { ROUTES } from "@/lib/routes";
-import type { Sale, EarningsSummary } from "@/types";
-import { format, isWithinInterval, parseISO, startOfDay, endOfDay } from "date-fns";
-
-// TODO: replace with real API hook
-const MOCK_SUMMARY: EarningsSummary = {
-  totalEarnings: 1842.5,
-  totalSales: 214,
-  averageSaleValue: 8.61,
-  transactions: [
-    { id: "s1", bookId: "b1", bookTitle: "The Art of Solitude", buyerLabel: "Anon #42", price: 14.99, authorCut: 10.49, createdAt: "2025-06-10T14:30:00Z" },
-    { id: "s2", bookId: "b2", bookTitle: "Digital Minimalism", buyerLabel: "Anon #81", price: 9.99, authorCut: 6.99, createdAt: "2025-06-09T10:15:00Z" },
-    { id: "s3", bookId: "b1", bookTitle: "The Art of Solitude", buyerLabel: "Anon #55", price: 14.99, authorCut: 10.49, createdAt: "2025-06-08T08:45:00Z" },
-    { id: "s4", bookId: "b3", bookTitle: "On Writing Well", buyerLabel: "Anon #12", price: 11.99, authorCut: 8.39, createdAt: "2025-06-07T16:20:00Z" },
-    { id: "s5", bookId: "b2", bookTitle: "Digital Minimalism", buyerLabel: "Anon #99", price: 9.99, authorCut: 6.99, createdAt: "2025-06-05T11:00:00Z" },
-    { id: "s6", bookId: "b1", bookTitle: "The Art of Solitude", buyerLabel: "Anon #33", price: 14.99, authorCut: 10.49, createdAt: "2025-06-03T09:30:00Z" },
-    { id: "s7", bookId: "b3", bookTitle: "On Writing Well", buyerLabel: "Anon #77", price: 11.99, authorCut: 8.39, createdAt: "2025-06-01T13:00:00Z" },
-    { id: "s8", bookId: "b2", bookTitle: "Digital Minimalism", buyerLabel: "Anon #18", price: 9.99, authorCut: 6.99, createdAt: "2025-05-28T07:10:00Z" },
-  ],
-};
-
-const BOOK_OPTIONS = [
-  { value: "all", label: "All Books" },
-  { value: "b1", label: "The Art of Solitude" },
-  { value: "b2", label: "Digital Minimalism" },
-  { value: "b3", label: "On Writing Well" },
-];
+import type { Sale } from "@/types";
+import { format, parseISO, startOfDay, endOfDay } from "date-fns";
+import { useEarnings } from "@/hooks/use-earnings";
 
 type SortKey = "date" | "amount";
 type SortDir = "asc" | "desc";
@@ -66,7 +43,7 @@ export default function AuthorEarningsPage() {
   const [sortKey, setSortKey] = useState<SortKey>("date");
   const [sortDir, setSortDir] = useState<SortDir>("desc");
 
-  const summary = MOCK_SUMMARY;
+  const { data: summary, isLoading } = useEarnings();
 
   function setParam(key: string, value: string) {
     const params = new URLSearchParams(searchParams.toString());
@@ -78,7 +55,21 @@ export default function AuthorEarningsPage() {
     router.replace(`?${params.toString()}`);
   }
 
+  // Build book options dynamically from real transactions
+  const bookOptions = useMemo(() => {
+    if (!summary) return [{ value: "all", label: "All Books" }];
+    const seen = new Map<string, string>();
+    for (const t of summary.transactions) {
+      if (!seen.has(t.bookId)) seen.set(t.bookId, t.bookTitle);
+    }
+    return [
+      { value: "all", label: "All Books" },
+      ...Array.from(seen.entries()).map(([id, title]) => ({ value: id, label: title })),
+    ];
+  }, [summary]);
+
   const filtered = useMemo(() => {
+    if (!summary) return [];
     let list = summary.transactions;
 
     if (bookFilter !== "all") {
@@ -104,7 +95,7 @@ export default function AuthorEarningsPage() {
     });
 
     return list;
-  }, [summary.transactions, bookFilter, dateFrom, dateTo, sortKey, sortDir]);
+  }, [summary, bookFilter, dateFrom, dateTo, sortKey, sortDir]);
 
   function toggleSort(key: SortKey) {
     if (sortKey === key) {
@@ -133,7 +124,7 @@ export default function AuthorEarningsPage() {
   return (
     <div className="space-y-8">
       <PageHeader title="Earnings" subtitle="Track your revenue and sales performance.">
-        <Button variant="outline" onClick={exportCsv} className="rounded-full border-[var(--color-brand-border)]">
+        <Button variant="outline" onClick={exportCsv} className="rounded-full border-[var(--color-brand-border)]" disabled={isLoading || !filtered.length}>
           <Download size={16} className="mr-1.5" />
           Export CSV
         </Button>
@@ -141,15 +132,25 @@ export default function AuthorEarningsPage() {
 
       {/* Stats */}
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-3">
-        <StatCard
-          label="Total Earnings"
-          value={`$${summary.totalEarnings.toLocaleString("en-US", { minimumFractionDigits: 2 })}`}
-        />
-        <StatCard label="Total Sales" value={String(summary.totalSales)} />
-        <StatCard
-          label="Avg Sale Value"
-          value={`$${summary.averageSaleValue.toFixed(2)}`}
-        />
+        {isLoading ? (
+          <>
+            {Array.from({ length: 3 }).map((_, i) => (
+              <Skeleton key={i} className="h-24 rounded-xl" />
+            ))}
+          </>
+        ) : (
+          <>
+            <StatCard
+              label="Total Earnings"
+              value={`$${(summary?.totalEarnings ?? 0).toLocaleString("en-US", { minimumFractionDigits: 2 })}`}
+            />
+            <StatCard label="Total Sales" value={String(summary?.totalSales ?? 0)} />
+            <StatCard
+              label="Avg Sale Value"
+              value={`$${(summary?.averageSaleValue ?? 0).toFixed(2)}`}
+            />
+          </>
+        )}
       </div>
 
       {/* Filters */}
@@ -161,7 +162,7 @@ export default function AuthorEarningsPage() {
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              {BOOK_OPTIONS.map((o) => (
+              {bookOptions.map((o) => (
                 <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
               ))}
             </SelectContent>
@@ -188,10 +189,18 @@ export default function AuthorEarningsPage() {
       </div>
 
       {/* Table */}
-      {filtered.length === 0 ? (
+      {isLoading ? (
+        <div className="space-y-2">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <Skeleton key={i} className="h-12 rounded-lg" />
+          ))}
+        </div>
+      ) : filtered.length === 0 ? (
         <EmptyState
-          title="No sales found"
-          description="Adjust your filters or check back later."
+          title={summary?.transactions.length === 0 ? "No earnings yet" : "No sales found"}
+          description={summary?.transactions.length === 0
+            ? "When readers purchase your books, earnings will appear here."
+            : "Adjust your filters or check back later."}
         />
       ) : (
         <div className="overflow-x-auto">
@@ -214,7 +223,7 @@ export default function AuthorEarningsPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filtered.map((sale) => (
+              {filtered.map((sale: Sale) => (
                 <TableRow key={sale.id} className="border-[var(--color-brand-border)]">
                   <TableCell className="text-sm text-[var(--color-brand-muted)]">
                     {format(new Date(sale.createdAt), "MMM d, yyyy")}

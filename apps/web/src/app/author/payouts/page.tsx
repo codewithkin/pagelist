@@ -1,12 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Loader2, Phone, Building2 } from "lucide-react";
 import { Button } from "@pagelist/ui/components/button";
 import { Input } from "@pagelist/ui/components/input";
 import { Label } from "@pagelist/ui/components/label";
 import { Badge } from "@pagelist/ui/components/badge";
 import { Separator } from "@pagelist/ui/components/separator";
+import { Skeleton } from "@pagelist/ui/components/skeleton";
 import {
   Table,
   TableBody,
@@ -22,12 +23,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import type { Payout, PayoutMethod } from "@/types";
 import { format } from "date-fns";
 import { toast } from "sonner";
-
-const MOCK_PAYOUTS: Payout[] = [
-  { id: "p1", amount: 250.0, destination: "EcoCash •••1234", initiatedAt: "2025-06-01T10:00:00Z", status: "COMPLETED" },
-  { id: "p2", amount: 180.0, destination: "EcoCash •••1234", initiatedAt: "2025-05-15T08:30:00Z", status: "COMPLETED" },
-  { id: "p3", amount: 300.0, destination: "CBZ Bank •••5678", initiatedAt: "2025-06-10T14:00:00Z", status: "PROCESSING" },
-];
+import { usePayouts, useSavePayoutMethod, useRequestPayout } from "@/hooks/use-payouts";
 
 const STATUS_STYLES: Record<Payout["status"], { label: string; variant: "default" | "secondary" | "outline" | "destructive" }> = {
   PROCESSING: { label: "Processing", variant: "secondary" },
@@ -36,59 +32,87 @@ const STATUS_STYLES: Record<Payout["status"], { label: string; variant: "default
 };
 
 export default function AuthorPayoutsPage() {
+  const { data, isLoading } = usePayouts();
+  const saveMethod = useSavePayoutMethod();
+  const requestPayout = useRequestPayout();
+
   const [methodType, setMethodType] = useState<PayoutMethod["type"]>("ECOCASH");
   const [phone, setPhone] = useState("");
   const [bankName, setBankName] = useState("");
   const [accountName, setAccountName] = useState("");
   const [accountNumber, setAccountNumber] = useState("");
-  const [isSaving, setIsSaving] = useState(false);
 
-  const availableBalance = 412.5; // TODO: from API
-  const payouts = MOCK_PAYOUTS;
+  // Pre-fill form from saved method
+  useEffect(() => {
+    if (!data?.payoutMethod) return;
+    const m = data.payoutMethod;
+    setMethodType(m.type);
+    if (m.type === "ECOCASH") {
+      setPhone(m.phoneNumber ?? "");
+    } else {
+      setBankName(m.bankName ?? "");
+      setAccountName(m.accountName ?? "");
+      setAccountNumber(m.accountNumber ?? "");
+    }
+  }, [data?.payoutMethod]);
 
   async function handleSaveMethod() {
-    setIsSaving(true);
     try {
-      // TODO: API call
+      await saveMethod.mutateAsync({
+        type: methodType,
+        phoneNumber: methodType === "ECOCASH" ? phone : undefined,
+        bankName: methodType === "BANK_TRANSFER" ? bankName : undefined,
+        accountName: methodType === "BANK_TRANSFER" ? accountName : undefined,
+        accountNumber: methodType === "BANK_TRANSFER" ? accountNumber : undefined,
+      });
       toast.success("Payout method saved.");
-    } catch {
-      toast.error("Failed to save payout method.");
-    } finally {
-      setIsSaving(false);
+    } catch (e: unknown) {
+      toast.error(e instanceof Error ? e.message : "Failed to save payout method.");
     }
   }
 
   async function handleRequestPayout() {
-    // TODO: API call
-    toast.success("Payout requested. You'll receive it within 24–48 hours.");
+    if (!data) return;
+    const amountCents = Math.floor(data.availableBalance * 100);
+    try {
+      await requestPayout.mutateAsync(amountCents);
+      toast.success("Payout requested. You'll receive it within 24–48 hours.");
+    } catch (e: unknown) {
+      toast.error(e instanceof Error ? e.message : "Failed to request payout.");
+    }
   }
+
+  const availableBalance = data?.availableBalance ?? 0;
+  const payouts = data?.payouts ?? [];
 
   return (
     <div className="space-y-8">
       <PageHeader title="Payouts" subtitle="Manage your payout method and request withdrawals.">
         <Button
           onClick={handleRequestPayout}
-          disabled={availableBalance <= 0}
+          disabled={availableBalance <= 0 || requestPayout.isPending || isLoading}
           className="bg-black text-white rounded-full hover:bg-neutral-800"
         >
+          {requestPayout.isPending && <Loader2 size={16} className="mr-1.5 animate-spin" />}
           Request Payout
         </Button>
       </PageHeader>
 
       {/* Balance */}
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-3">
-        <StatCard
-          label="Available Balance"
-          value={`$${availableBalance.toFixed(2)}`}
-        />
-        <StatCard
-          label="Total Withdrawn"
-          value={`$${payouts.filter((p) => p.status === "COMPLETED").reduce((sum, p) => sum + p.amount, 0).toFixed(2)}`}
-        />
-        <StatCard
-          label="Pending"
-          value={`$${payouts.filter((p) => p.status === "PROCESSING").reduce((sum, p) => sum + p.amount, 0).toFixed(2)}`}
-        />
+        {isLoading ? (
+          <>
+            {Array.from({ length: 3 }).map((_, i) => (
+              <Skeleton key={i} className="h-24 rounded-xl" />
+            ))}
+          </>
+        ) : (
+          <>
+            <StatCard label="Available Balance" value={`$${availableBalance.toFixed(2)}`} />
+            <StatCard label="Total Withdrawn" value={`$${(data?.totalWithdrawn ?? 0).toFixed(2)}`} />
+            <StatCard label="Pending" value={`$${(data?.totalPending ?? 0).toFixed(2)}`} />
+          </>
+        )}
       </div>
 
       {/* Payout method */}
@@ -160,10 +184,10 @@ export default function AuthorPayoutsPage() {
 
         <Button
           onClick={handleSaveMethod}
-          disabled={isSaving || (methodType === "ECOCASH" ? !phone : !bankName || !accountName || !accountNumber)}
+          disabled={saveMethod.isPending || (methodType === "ECOCASH" ? !phone : !bankName || !accountName || !accountNumber)}
           className="bg-black text-white rounded-full hover:bg-neutral-800"
         >
-          {isSaving && <Loader2 size={16} className="mr-1.5 animate-spin" />}
+          {saveMethod.isPending && <Loader2 size={16} className="mr-1.5 animate-spin" />}
           Save Method
         </Button>
       </section>
@@ -179,7 +203,13 @@ export default function AuthorPayoutsPage() {
           Payout History
         </h2>
 
-        {payouts.length === 0 ? (
+        {isLoading ? (
+          <div className="space-y-2">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <Skeleton key={i} className="h-12 rounded-lg" />
+            ))}
+          </div>
+        ) : payouts.length === 0 ? (
           <EmptyState title="No payouts yet" description="Request your first payout when you have available earnings." />
         ) : (
           <div className="overflow-x-auto">

@@ -21,70 +21,55 @@ export interface WorkspaceStats {
   }[];
 }
 
-// Deterministic mock data until a Books model is added to the schema.
-// Values are seeded by the user's account creation time to feel personalised.
-function seed(userId: string): number {
-  let h = 0;
-  for (let i = 0; i < userId.length; i++) {
-    h = (Math.imul(31, h) + userId.charCodeAt(i)) | 0;
-  }
-  return Math.abs(h);
-}
-
-const BOOK_TITLES = [
-  "The Weight of Ink",
-  "Soft Architectures",
-  "Between Pages",
-  "A Study in Margins",
-  "Quiet Meridian",
-  "The Annotator",
-  "Letters to the Reader",
-  "Pale Folio",
-];
-
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
 export async function getWorkspaceStats(userId: string): Promise<WorkspaceStats> {
   const user = await prisma.user.findUnique({ where: { id: userId } });
   if (!user) throw new Error("User not found.");
 
-  const s = seed(userId);
-
-  const publishedBooks = 4 + (s % 12);
-  const totalReaders = 200 + (s % 800);
-  const monthlyRevenueCents = 20000 + (s % 150000);
-  const avgRating = 4.1 + ((s % 9) / 10);
-
-  const recentBooks = Array.from({ length: Math.min(publishedBooks, 6) }, (_, i) => {
-    const si = seed(userId + i);
-    return {
-      id: `book-${i + 1}`,
-      title: BOOK_TITLES[(s + i) % BOOK_TITLES.length]!,
-      status: (si % 5 === 0 ? "draft" : "published") as "published" | "draft",
-      readers: 10 + (si % 200),
-      revenueCents: 500 + (si % 30000),
-      publishedAt: new Date(Date.now() - (i + 1) * 12 * 24 * 60 * 60 * 1000).toISOString(),
-    };
-  });
-
   const now = new Date();
+  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
+  const [publishedCount, recentBooks, monthPurchasesCents] = await Promise.all([
+    prisma.book.count({ where: { authorId: userId, status: "PUBLISHED" } }),
+    prisma.book.findMany({
+      where: { authorId: userId },
+      include: { _count: { select: { purchases: true } } },
+      orderBy: { updatedAt: "desc" },
+      take: 6,
+    }),
+    prisma.purchase.findMany({
+      where: { book: { authorId: userId }, createdAt: { gte: startOfMonth } },
+      select: { amountPaid: true },
+    }),
+  ]);
+
+  const totalReaders = await prisma.purchase.count({ where: { book: { authorId: userId } } });
+  const monthlyRevenueCents = monthPurchasesCents.reduce((sum, p) => sum + p.amountPaid, 0);
+
+  const recentBooksData = recentBooks.map((b) => ({
+    id: b.id,
+    title: b.title,
+    status: (b.status === "PUBLISHED" ? "published" : "draft") as "published" | "draft",
+    readers: b._count.purchases,
+    revenueCents: 0, // would need per-book revenue query; simplified here
+    publishedAt: b.updatedAt.toISOString(),
+  }));
+
+  // Build views data — placeholder (no view tracking model yet); returns zeros
   const viewsData = Array.from({ length: 12 }, (_, i) => {
     const monthIndex = (now.getMonth() - 11 + i + 12) % 12;
-    const si = seed(userId + `month${i}`);
-    return {
-      month: MONTHS[monthIndex]!,
-      views: 100 + (si % 1200) + i * 30,
-    };
+    return { month: MONTHS[monthIndex]!, views: 0 };
   });
 
   return {
     stats: {
-      publishedBooks,
+      publishedBooks: publishedCount,
       totalReaders,
       monthlyRevenueCents,
-      avgRating: Math.round(avgRating * 10) / 10,
+      avgRating: 0,
     },
-    recentBooks,
+    recentBooks: recentBooksData,
     viewsData,
   };
 }

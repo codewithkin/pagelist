@@ -31,7 +31,11 @@ model User {
   createdAt                       DateTime @default(now())
   updatedAt                       DateTime @updatedAt
 
-  sessions Session[]
+  sessions      Session[]
+  books         Book[]         @relation("AuthoredBooks")
+  purchases     Purchase[]     @relation("PurchasedBooks")
+  payouts       Payout[]
+  payoutMethod  PayoutMethod?
 
   @@map("users")
 }
@@ -48,4 +52,84 @@ model Session {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("sessions")
+}
+
+enum BookStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+model Book {
+  id          String     @id @default(cuid())
+  title       String
+  description String
+  genre       String
+  language    String
+  priceCents  Int        @default(0)
+  coverUrl    String?
+  fileUrl     String?
+  status      BookStatus @default(DRAFT)
+  authorId    String
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  author    User       @relation("AuthoredBooks", fields: [authorId], references: [id], onDelete: Cascade)
+  purchases Purchase[]
+
+  @@map("books")
+}
+
+model Purchase {
+  id          String   @id @default(cuid())
+  readerId    String
+  bookId      String
+  amountPaid  Int
+  createdAt   DateTime @default(now())
+
+  reader User @relation("PurchasedBooks", fields: [readerId], references: [id], onDelete: Cascade)
+  book   Book @relation(fields: [bookId], references: [id], onDelete: Cascade)
+
+  @@unique([readerId, bookId])
+  @@map("purchases")
+}
+
+enum PayoutStatus {
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+model Payout {
+  id          String       @id @default(cuid())
+  authorId    String
+  amountCents Int
+  destination String
+  status      PayoutStatus @default(PROCESSING)
+  initiatedAt DateTime     @default(now())
+
+  author User @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@map("payouts")
+}
+
+enum PayoutMethodType {
+  ECOCASH
+  BANK_TRANSFER
+}
+
+model PayoutMethod {
+  id            String           @id @default(cuid())
+  userId        String           @unique
+  type          PayoutMethodType
+  phoneNumber   String?
+  bankName      String?
+  accountName   String?
+  accountNumber String?
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("payout_methods")
 }

@@ -10,9 +10,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { LoadingSkeleton } from "@/components/ui/loading-skeleton";
 import { ROUTES } from "@/lib/routes";
 import type { Book } from "@/types";
-
-// TODO: replace with real API hook
-const MOCK_BOOKS: Book[] = [];
+import { useLibraryBooks } from "@/hooks/use-browse";
 
 export default function ReaderLibraryPage() {
   const router = useRouter();
@@ -20,9 +18,7 @@ export default function ReaderLibraryPage() {
   const query = searchParams.get("q") ?? "";
   const [search, setSearch] = useState(query);
 
-  // TODO: replace with useQuery
-  const books = MOCK_BOOKS;
-  const isLoading = false;
+  const { data: books = [], isLoading } = useLibraryBooks();
 
   const filtered = books.filter(
     (b) =>

@@ -15,8 +15,10 @@ import { StatCard } from "@/components/ui/stat-card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { PriceTag } from "@/components/ui/price-tag";
 import { ROUTES } from "@/lib/routes";
-import type { AuthorSummary, Sale } from "@/types";
+import type { Sale } from "@/types";
 import { format } from "date-fns";
+import { useAuthorSummary } from "@/hooks/use-earnings";
+import { Skeleton } from "@pagelist/ui/components/skeleton";
 
 function greeting(): string {
   const h = new Date().getHours();
@@ -25,24 +27,8 @@ function greeting(): string {
   return "Good evening";
 }
 
-// TODO: replace with real API hook
-const MOCK_SUMMARY: AuthorSummary = {
-  totalEarnings: 1842.5,
-  monthEarnings: 326.0,
-  totalBooks: 7,
-  totalSold: 214,
-  recentSales: [
-    { id: "s1", bookId: "b1", bookTitle: "The Art of Solitude", buyerLabel: "Anon #42", price: 14.99, authorCut: 10.49, createdAt: new Date(Date.now() - 3600000).toISOString() },
-    { id: "s2", bookId: "b2", bookTitle: "Digital Minimalism", buyerLabel: "Anon #81", price: 9.99, authorCut: 6.99, createdAt: new Date(Date.now() - 7200000).toISOString() },
-    { id: "s3", bookId: "b1", bookTitle: "The Art of Solitude", buyerLabel: "Anon #55", price: 14.99, authorCut: 10.49, createdAt: new Date(Date.now() - 14400000).toISOString() },
-    { id: "s4", bookId: "b3", bookTitle: "On Writing Well", buyerLabel: "Anon #12", price: 11.99, authorCut: 8.39, createdAt: new Date(Date.now() - 28800000).toISOString() },
-    { id: "s5", bookId: "b2", bookTitle: "Digital Minimalism", buyerLabel: "Anon #99", price: 9.99, authorCut: 6.99, createdAt: new Date(Date.now() - 43200000).toISOString() },
-  ],
-};
-
 export default function AuthorWorkspacePage() {
-  // TODO: const { data: summary, isLoading } = useAuthorSummary();
-  const summary: AuthorSummary = MOCK_SUMMARY;
+  const { data: summary, isLoading } = useAuthorSummary();
 
   return (
     <div className="space-y-8">
@@ -60,17 +46,26 @@ export default function AuthorWorkspacePage() {
 
       {/* Stats */}
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <StatCard
-          label="Total Earnings"
-          value={`$${summary.totalEarnings.toLocaleString("en-US", { minimumFractionDigits: 2 })}`}
-        />
-        <StatCard
-          label="This Month"
-          value={`$${summary.monthEarnings.toLocaleString("en-US", { minimumFractionDigits: 2 })}`}
-          trend={{ value: 12, direction: "up" }}
-        />
-        <StatCard label="Published Books" value={String(summary.totalBooks)} />
-        <StatCard label="Copies Sold" value={String(summary.totalSold)} />
+        {isLoading ? (
+          <>
+            {Array.from({ length: 4 }).map((_, i) => (
+              <Skeleton key={i} className="h-24 rounded-xl" />
+            ))}
+          </>
+        ) : (
+          <>
+            <StatCard
+              label="Total Earnings"
+              value={`$${(summary?.totalEarnings ?? 0).toLocaleString("en-US", { minimumFractionDigits: 2 })}`}
+            />
+            <StatCard
+              label="This Month"
+              value={`$${(summary?.monthEarnings ?? 0).toLocaleString("en-US", { minimumFractionDigits: 2 })}`}
+            />
+            <StatCard label="Published Books" value={String(summary?.totalBooks ?? 0)} />
+            <StatCard label="Copies Sold" value={String(summary?.totalSold ?? 0)} />
+          </>
+        )}
       </div>
 
       {/* Quick Actions */}
@@ -101,7 +96,13 @@ export default function AuthorWorkspacePage() {
           Recent Sales
         </h2>
 
-        {summary.recentSales.length === 0 ? (
+        {isLoading ? (
+          <div className="space-y-2">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <Skeleton key={i} className="h-12 rounded-lg" />
+            ))}
+          </div>
+        ) : !summary || summary.recentSales.length === 0 ? (
           <EmptyState
             title="No sales yet"
             description="Once readers purchase your books, sales will appear here."
