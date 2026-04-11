@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 import { Button } from "@pagelist/ui/components/button";
 import { Input } from "@pagelist/ui/components/input";
@@ -13,17 +13,20 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@pagel
 import { PageHeader } from "@/components/ui/page-header";
 import { DangerZone } from "@/components/ui/danger-zone";
 import { useSession } from "@/hooks/use-auth";
+import { useUploadProfilePicture } from "@/hooks/use-upload";
 import { toast } from "sonner";
 
 export default function AuthorSettingsPage() {
   const { session } = useSession();
+  const uploadProfilePicture = useUploadProfilePicture();
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Profile
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [bio, setBio] = useState("");
   const [website, setWebsite] = useState("");
-  const [avatarUrl] = useState<string | null>(null);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [isSavingProfile, setIsSavingProfile] = useState(false);
 
   // Load session data on mount
@@ -60,6 +63,19 @@ export default function AuthorSettingsPage() {
       toast.error("Failed to update profile.");
     } finally {
       setIsSavingProfile(false);
+    }
+  }
+
+  async function handleAvatarUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      const result = await uploadProfilePicture.mutateAsync(file);
+      setAvatarUrl(result.url);
+      toast.success("Profile picture updated.");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to upload profile picture.");
     }
   }
 
@@ -102,8 +118,22 @@ export default function AuthorSettingsPage() {
               {name.charAt(0).toUpperCase()}
             </AvatarFallback>
           </Avatar>
-          <Button variant="outline" size="sm" className="rounded-full border-[var(--color-brand-border)]">
-            Upload photo
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            onChange={handleAvatarUpload}
+            className="hidden"
+          />
+          <Button
+            onClick={() => fileInputRef.current?.click()}
+            disabled={uploadProfilePicture.isPending}
+            variant="outline"
+            size="sm"
+            className="rounded-full border-[var(--color-brand-border)]"
+          >
+            {uploadProfilePicture.isPending && <Loader2 size={16} className="mr-2 animate-spin" />}
+            {uploadProfilePicture.isPending ? "Uploading..." : "Upload photo"}
           </Button>
         </div>
 

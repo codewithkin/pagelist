@@ -67,3 +67,23 @@ export async function apiMutation<TData = unknown, TBody = unknown>(
     throw new ApiError(e instanceof Error ? e.message : "Operation failed. Please try again.");
   }
 }
+
+/** Use as `mutationFn` in `useMutation` for multipart/form-data uploads. */
+export async function apiUpload<TData = unknown>(
+  url: string,
+  formData: FormData,
+): Promise<TData> {
+  try {
+    const res = await apiClient.post<TData>(url, formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
+    return res.data as TData;
+  } catch (e) {
+    if (e instanceof ApiError) throw e;
+    const error = e as AxiosError<{ error?: string }>;
+    const message = error.response?.data?.error || (e instanceof Error ? e.message : "Upload failed");
+    throw new ApiError(message, error.response?.status);
+  }
+}

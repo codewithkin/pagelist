@@ -16,6 +16,7 @@
     "@pagelist/env": "workspace:*",
     "@pagelist/db": "workspace:*",
     "@pagelist/auth": "workspace:*",
+    "@pagelist/upload": "workspace:*",
     "hono": "^4.8.2"
   },
   "devDependencies": {

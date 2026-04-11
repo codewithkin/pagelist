@@ -21,6 +21,7 @@ import { PageHeader } from "@/components/ui/page-header";
 import { DangerZone } from "@/components/ui/danger-zone";
 import { ROUTES } from "@/lib/routes";
 import { useAuthorBook, useUpdateBook, useDeleteBook } from "@/hooks/use-books";
+import { useUploadBook } from "@/hooks/use-upload";
 import { toast } from "sonner";
 
 const GENRES = [
@@ -39,6 +40,7 @@ export default function EditBookPage({ params }: { params: Promise<{ id: string 
   const { data: book, isLoading } = useAuthorBook(id);
   const updateBook = useUpdateBook(id);
   const deleteBook = useDeleteBook();
+  const uploadBook = useUploadBook();
 
   // Pre-populate with existing data
   const [title, setTitle] = useState("");
@@ -48,6 +50,7 @@ export default function EditBookPage({ params }: { params: Promise<{ id: string 
   const [price, setPrice] = useState("");
   const [replaceFile, setReplaceFile] = useState<File | null>(null);
   const [replaceCover, setReplaceCover] = useState<File | null>(null);
+  const [fileUrl, setFileUrl] = useState<string | null>(null);
 
   // Load book data when it arrives
   useEffect(() => {
@@ -81,12 +84,22 @@ export default function EditBookPage({ params }: { params: Promise<{ id: string 
   async function handleSave() {
     setIsSaving(true);
     try {
+      let uploadedFileUrl = fileUrl;
+
+      // Upload PDF if a new file was selected
+      if (replaceFile) {
+        const result = await uploadBook.mutateAsync(replaceFile);
+        uploadedFileUrl = result.url;
+        setFileUrl(result.url);
+      }
+
       await updateBook.mutateAsync({
         title,
         description,
         genre,
         language,
         price: Number(price),
+        ...(uploadedFileUrl && { fileUrl: uploadedFileUrl }),
       });
       toast.success("Book updated successfully.");
       router.push(ROUTES.AUTHOR_BOOKS);
@@ -250,11 +263,11 @@ export default function EditBookPage({ params }: { params: Promise<{ id: string 
           <div className="flex justify-end">
             <Button
               onClick={handleSave}
-              disabled={isSaving || !title.trim()}
+              disabled={isSaving || uploadBook.isPending || !title.trim()}
               className="bg-black text-white rounded-full hover:bg-neutral-800"
             >
-              {isSaving && <Loader2 size={16} className="mr-1.5 animate-spin" />}
-              Save Changes
+              {(isSaving || uploadBook.isPending) && <Loader2 size={16} className="mr-1.5 animate-spin" />}
+              {uploadBook.isPending ? "Uploading..." : "Save Changes"}
             </Button>
           </div>
 
