@@ -45,7 +45,7 @@ export async function initiateSignUp(
       passwordHash,
       role: input.role,
       emailVerificationToken: verificationToken,
-      emailVerificationTokenExpiresAt,
+      emailVerificationTokenExpiresAt: verificationTokenExpiresAt,
     },
   });
 
