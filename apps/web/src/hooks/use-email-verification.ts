@@ -53,3 +53,18 @@ export function useVerifyEmail() {
     },
   });
 }
+
+export function useResendVerificationEmail() {
+  return useMutation({
+    mutationFn: (email: string) =>
+      apiMutation<{ message: string }, { email: string }>(
+        "post",
+        "/api/auth/resend-verification-email",
+        { email },
+      ),
+    onError: (error) => {
+      // Error message is automatically extracted in apiMutation
+      // Display it in the UI through the error state
+    },
+  });
+}
