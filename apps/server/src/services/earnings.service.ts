@@ -17,7 +17,7 @@ export interface EarningsSummary {
   transactions: SaleRecord[];
 }
 
-const PLATFORM_FEE_RATE = 0.3; // 30% platform fee — author gets 70%
+const PLATFORM_FEE_RATE = 0.2; // 20% platform fee — author gets 80%
 
 export async function getEarningsSummary(authorId: string): Promise<EarningsSummary> {
   const purchases = await prisma.purchase.findMany({

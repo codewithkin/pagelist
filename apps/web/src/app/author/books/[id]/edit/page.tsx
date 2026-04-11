@@ -98,7 +98,7 @@ export default function EditBookPage({ params }: { params: Promise<{ id: string 
         description,
         genre,
         language,
-        price: Number(price),
+        priceCents: Math.round(Number(price) * 100),
         ...(uploadedFileUrl && { fileUrl: uploadedFileUrl }),
       });
       toast.success("Book updated successfully.");

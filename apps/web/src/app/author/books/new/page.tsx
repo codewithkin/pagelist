@@ -390,24 +390,24 @@ function StepPricing({ form, update }: { form: FormData; update: (p: Partial<For
           />
         </div>
         <p className="text-xs text-[var(--color-brand-muted)]">
-          Set to 0 for a free book. PageList takes a 30% platform fee on paid sales.
+          Set to 0 for a free book. PageList takes a 20% platform fee on paid sales.
         </p>
       </div>
 
       {Number(form.price) > 0 && (
         <div className="rounded-lg bg-[var(--color-brand-surface)] p-4 text-sm">
           <div className="flex items-center justify-between">
-            <span className="text-[var(--color-brand-muted)]">List price</span>
+            <span className="text-[var(--color-brand-muted)]">Reader pays</span>
             <PriceTag amount={Number(form.price)} />
           </div>
           <div className="mt-2 flex items-center justify-between">
-            <span className="text-[var(--color-brand-muted)]">Platform fee (30%)</span>
-            <span className="text-[var(--color-brand-muted)]">-${(Number(form.price) * 0.3).toFixed(2)}</span>
+            <span className="text-[var(--color-brand-muted)]">Platform fee (20%)</span>
+            <span className="text-[var(--color-brand-muted)]">−${(Number(form.price) * 0.2).toFixed(2)}</span>
           </div>
           <Separator className="my-2 bg-[var(--color-brand-border)]" />
           <div className="flex items-center justify-between font-medium">
             <span className="text-[var(--color-brand-primary)]">You earn</span>
-            <PriceTag amount={Number(form.price) * 0.7} />
+            <PriceTag amount={Number(form.price) * 0.8} />
           </div>
         </div>
       )}
