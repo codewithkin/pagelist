@@ -15,7 +15,7 @@ import { Button } from "@pagelist/ui/components/button";
 import { Input } from "@pagelist/ui/components/input";
 import { Label } from "@pagelist/ui/components/label";
 import { cn } from "@pagelist/ui/lib/utils";
-import { useSignUpWithVerification } from "@/hooks/use-email-verification";
+import { useSignUpWithVerification, useResendVerificationEmail } from "@/hooks/use-email-verification";
 
 export default function SignUpPage() {
   const [name, setName] = useState("");
@@ -23,8 +23,10 @@ export default function SignUpPage() {
   const [password, setPassword] = useState("");
   const [role, setRole] = useState<"READER" | "WRITER" | null>(null);
   const [showPassword, setShowPassword] = useState(false);
+  const [resendSuccess, setResendSuccess] = useState(false);
 
   const { mutate: signUp, isPending, error, data } = useSignUpWithVerification();
+  const { mutate: resendVerification, isPending: isResending } = useResendVerificationEmail();
 
   // Success state: show after successful signup
   if (data?.pendingVerification) {
@@ -64,8 +66,21 @@ export default function SignUpPage() {
             in <strong>5 minutes</strong>.
           </p>
           <p className="text-xs text-muted-foreground leading-relaxed">
-            <strong>Don't see the email?</strong> Check your spam folder or wait a moment and try
-            again.
+            <strong>Don't see the email?</strong> Check your spam folder or{" "}
+            <button
+              onClick={() => {
+                resendVerification(data.email, {
+                  onSuccess: () => {
+                    setResendSuccess(true);
+                    setTimeout(() => setResendSuccess(false), 4000);
+                  },
+                });
+              }}
+              disabled={isResending || resendSuccess}
+              className="text-[#D9A826] hover:underline disabled:opacity-50 disabled:cursor-not-allowed transition-opacity"
+            >
+              {isResending ? "sending..." : resendSuccess ? "email sent!" : "resend email"}
+            </button>
           </p>
         </div>
 
