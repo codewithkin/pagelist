@@ -1,7 +1,7 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { apiGet, apiMutation } from "@/lib/api-client";
+import { apiGet, apiMutation, setAuthToken } from "@/lib/api-client";
 import type { SessionData } from "@pagelist/auth/types";
 
 // ---------------------------------------------------------------------------
@@ -48,6 +48,11 @@ export function useSignIn() {
       apiMutation<AuthResponse, SignInBody>("post", "/api/auth/sign-in", data),
     onSuccess: (data) => {
       queryClient.setQueryData(SESSION_QUERY_KEY, data);
+      // Store session and set auth token
+      if (data.session) {
+        setAuthToken(data.session.token);
+        window.sessionStorage?.setItem("auth:session", JSON.stringify(data.session));
+      }
     },
   });
 }
@@ -71,6 +76,11 @@ export function useSignUp() {
       apiMutation<AuthResponse, SignUpBody>("post", "/api/auth/sign-up", data),
     onSuccess: (data) => {
       queryClient.setQueryData(SESSION_QUERY_KEY, data);
+      // Store session and set auth token
+      if (data.session) {
+        setAuthToken(data.session.token);
+        window.sessionStorage?.setItem("auth:session", JSON.stringify(data.session));
+      }
     },
   });
 }
@@ -87,6 +97,9 @@ export function useSignOut() {
     onSuccess: () => {
       queryClient.setQueryData(SESSION_QUERY_KEY, null);
       queryClient.invalidateQueries({ queryKey: SESSION_QUERY_KEY });
+      // Clear auth token and session
+      setAuthToken(null);
+      window.sessionStorage?.removeItem("auth:session");
     },
   });
 }

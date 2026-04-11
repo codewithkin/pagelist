@@ -2,7 +2,9 @@
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@pagelist/ui/components/sonner";
-import { useState, createContext, useContext, ReactNode } from "react";
+import { useRouter } from "next/navigation";
+import { useState, createContext, useContext, ReactNode, useEffect } from "react";
+import { setAuthToken, apiClient } from "@/lib/api-client";
 
 interface SessionData {
   user: {
@@ -32,6 +34,7 @@ export function useAuthContext() {
 }
 
 export default function Providers({ children }: { children: ReactNode }) {
+  const router = useRouter();
   const [queryClient] = useState(
     () =>
       new QueryClient({
@@ -45,6 +48,52 @@ export default function Providers({ children }: { children: ReactNode }) {
   );
 
   const [session, setSession] = useState<SessionData | null>(null);
+
+  // Initialize session on mount and listen for auth errors
+  useEffect(() => {
+    // Try to fetch session from server
+    const initSession = async () => {
+      try {
+        const res = await apiClient.get<{ success: boolean; data?: { session: SessionData } }>(
+          "/api/auth/session",
+        );
+        if (res.data.success && res.data.data?.session) {
+          const sessionData = res.data.data.session;
+          setSession(sessionData);
+          setAuthToken(sessionData.token);
+        }
+      } catch {
+        // Session fetch failed or user not authenticated
+        setSession(null);
+        setAuthToken(null);
+      }
+    };
+
+    // Check if there's a session from sign-in/sign-up
+    const sessionData = window.sessionStorage?.getItem("auth:session");
+    if (sessionData) {
+      try {
+        const session = JSON.parse(sessionData) as SessionData;
+        setSession(session);
+        setAuthToken(session.token);
+        window.sessionStorage.removeItem("auth:session");
+      } catch {
+        // Invalid session data
+      }
+    }
+
+    initSession();
+
+    // Listen for auth errors and redirect to sign-in
+    const handleAuthError = () => {
+      setSession(null);
+      setAuthToken(null);
+      router.push("/auth/signin");
+    };
+
+    window.addEventListener("auth:unauthorized", handleAuthError);
+    return () => window.removeEventListener("auth:unauthorized", handleAuthError);
+  }, [router]);
 
   return (
     <AuthContext.Provider value={{ session, setSession }}>

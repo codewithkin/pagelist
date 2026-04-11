@@ -18,6 +18,12 @@ export class ApiError extends Error {
   }
 }
 
+let authToken: string | null = null;
+
+export function setAuthToken(token: string | null) {
+  authToken = token;
+}
+
 export const apiClient = axios.create({
   baseURL: env.NEXT_PUBLIC_SERVER_URL,
   withCredentials: true,
@@ -26,10 +32,30 @@ export const apiClient = axios.create({
   },
 });
 
+// Request interceptor to add auth token
+apiClient.interceptors.request.use((config) => {
+  if (authToken) {
+    config.headers.Authorization = `Bearer ${authToken}`;
+  }
+  return config;
+});
+
 // Response interceptor to standardize error handling
 apiClient.interceptors.response.use(
   (response) => response,
   (error: AxiosError<ApiResponse<unknown>>) => {
+    // Handle 401 Unauthorized - redirect to sign-in
+    if (error.response?.status === 401) {
+      // Dispatch custom event so app can redirect
+      window.dispatchEvent(
+        new CustomEvent("auth:unauthorized", {
+          detail: {
+            message: error.response.data?.error || "Your session has expired. Please sign in again.",
+          },
+        }),
+      );
+    }
+
     const message =
       error.response?.data?.error || error.message || "Something went wrong. Please try again.";
     throw new ApiError(message, error.response?.status);
