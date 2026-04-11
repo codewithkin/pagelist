@@ -1,60 +1,8 @@
 "use client";
 
-import { useEffect } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { useSession } from "@/hooks/use-session";
 
 export default function HomePage() {
-  const router = useRouter();
-  const { session, isPending } = useSession();
-
-  useEffect(() => {
-    if (isPending) return;
-
-    // Not signed in → redirect to signin
-    if (!session) {
-      router.replace("/auth/signin");
-      return;
-    }
-
-    // Signed in → redirect based on role
-    const role = session.user.role;
-    if (role === "WRITER") {
-      router.replace("/author/workspace");
-    } else if (role === "READER") {
-      router.replace("/reader/library");
-    }
-  }, [session, isPending, router]);
-
-  if (isPending) {
-    return (
-      <div className="flex h-full items-center justify-center">
-        <div className="flex items-center gap-1.5">
-          <span
-            className="h-1.5 w-1.5 rounded-full bg-[#D9A826] animate-bounce"
-            style={{ animationDelay: "-0.3s" }}
-          />
-          <span
-            className="h-1.5 w-1.5 rounded-full bg-[#D9A826] animate-bounce"
-            style={{ animationDelay: "-0.15s" }}
-          />
-          <span className="h-1.5 w-1.5 rounded-full bg-[#D9A826] animate-bounce" />
-        </div>
-      </div>
-    );
-  }
-
-  if (session) {
-    return (
-      <div className="flex h-full items-center justify-center">
-        <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
-          Redirecting…
-        </p>
-      </div>
-    );
-  }
-
   return (
     <div className="flex h-full flex-col items-center justify-center px-4 text-center">
       <p className="mb-4 text-xs uppercase tracking-[0.25em] text-[#D9A826]">
