@@ -33,9 +33,14 @@ const app = new Hono();
 
 app.use(logger());
 app.use(
-  "/*",
   cors({
-    origin: env.CORS_ORIGIN,
+    origin: (origin) => {
+      // In development, allow localhost with any port
+      if (origin?.includes("localhost")) return origin || "*";
+      // Allow the configured origin
+      if (origin === env.CORS_ORIGIN) return origin;
+      return false;
+    },
     credentials: true,
     allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowHeaders: ["Content-Type", "Authorization"],
