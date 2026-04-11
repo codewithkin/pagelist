@@ -29,6 +29,10 @@ const resetPasswordSchema = z.object({
   password: z.string().min(8, "Password must be at least 8 characters."),
 });
 
+const resendVerificationEmailSchema = z.object({
+  email: z.string().email("Invalid email address."),
+});
+
 function meta(c: Context) {
   return {
     ipAddress: c.req.header("x-forwarded-for") ?? c.req.header("cf-connecting-ip"),
@@ -104,6 +108,26 @@ export async function handleVerifyEmail(c: Context) {
     }
     return err(c, message, 400);
   }
+}
+
+/**
+ * POST /api/auth/resend-verification-email
+ * Resends verification email with a fresh token for unverified accounts.
+ * Always returns success to prevent email enumeration.
+ */
+export async function handleResendVerificationEmail(c: Context) {
+  const body = await c.req.json().catch(() => null);
+  const parsed = resendVerificationEmailSchema.safeParse(body);
+
+  if (!parsed.success) {
+    return err(c, "Please enter a valid email address.", 422);
+  }
+
+  const verificationBaseUrl = getVerificationBaseUrl(c);
+  // Always returns success — prevents email enumeration
+  const result = await AuthService.resendVerificationEmail(parsed.data.email, verificationBaseUrl);
+
+  return ok(c, null, result.message);
 }
 
 export async function handleSignIn(c: Context) {
