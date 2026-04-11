@@ -10,13 +10,20 @@ export default function HomePage() {
   const { session, isPending } = useSession();
 
   useEffect(() => {
-    if (!isPending && session) {
-      const role = session.user.role;
-      if (role === "WRITER") {
-        router.replace("/workspace" as never);
-      } else {
-        router.replace("/library" as never);
-      }
+    if (isPending) return;
+
+    // Not signed in → redirect to signin
+    if (!session) {
+      router.replace("/auth/signin");
+      return;
+    }
+
+    // Signed in → redirect based on role
+    const role = session.user.role;
+    if (role === "WRITER") {
+      router.replace("/author/workspace");
+    } else if (role === "READER") {
+      router.replace("/reader/library");
     }
   }, [session, isPending, router]);
 
