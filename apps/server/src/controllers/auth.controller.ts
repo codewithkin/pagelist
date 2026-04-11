@@ -2,6 +2,7 @@ import type { Context } from "hono";
 import { z } from "zod";
 import * as AuthService from "@/services/auth.service";
 import { ok, created, err } from "@/lib/response";
+import { env } from "@pagelist/env/server";
 
 const signUpSchema = z.object({
   name: z.string().min(1, "Name is required.").max(100),
@@ -36,9 +37,9 @@ function meta(c: Context) {
 }
 
 function getVerificationBaseUrl(c: Context): string {
-  const host = c.req.header("host") || "localhost:3000";
-  const protocol = c.req.header("x-forwarded-proto") || "http";
-  return `${protocol}://${host}`;
+  // Use the frontend URL from environment, not from request headers
+  // This ensures email links point to the correct frontend regardless of how the request is routed
+  return env.FRONTEND_URL;
 }
 
 /**

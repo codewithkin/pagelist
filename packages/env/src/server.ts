@@ -6,6 +6,7 @@ export const env = createEnv({
   server: {
     DATABASE_URL: z.string().min(1),
     CORS_ORIGIN: z.url(),
+    FRONTEND_URL: z.url().default("http://localhost:3001"),
     JWT_SECRET: z.string().min(32),
     NODE_ENV: z.enum(["development", "production", "test"]).default("development"),
     SMTP_HOST: z.string().optional(),
