@@ -50,10 +50,10 @@ function getVerificationEmailHTML(
 <body>
   <div class="container">
     <div class="header">
-      <div class="logo">pagelist</div>
+      <div class="logo">Pagelist</div>
     </div>
     <div class="content">
-      <h1 class="greeting">Welcome to pagelist, ${userName}!</h1>
+      <h1 class="greeting">Welcome to Pagelist, ${userName}!</h1>
       <p class="message">
         We're excited to have you join our community of readers and writers. To complete your registration, please verify your email address by clicking the button below.
       </p>
@@ -63,11 +63,11 @@ function getVerificationEmailHTML(
       <div class="cta-container">
         <a href="${verificationLink}" class="cta-button">Verify Email Address</a>
       </div>
-      <p class="expiry">This link expires in 5 minutes. If you didn't sign up for a pagelist account, please ignore this email.</p>
+      <p class="expiry">This link expires in 5 minutes. If you didn't sign up for a Pagelist account, please ignore this email.</p>
     </div>
     <div class="footer">
-      <p style="margin: 0;">© 2026 pagelist. All rights reserved.</p>
-      <p style="margin: 8px 0 0 0;"><a href="https://pagelist.local" class="footer-link">Visit pagelist</a></p>
+      <p style="margin: 0;">© 2026 Pagelist. All rights reserved.</p>
+      <p style="margin: 8px 0 0 0;"><a href="https://pagelist.local" class="footer-link">Visit Pagelist</a></p>
     </div>
   </div>
 </body>
@@ -89,9 +89,9 @@ export async function sendVerificationEmail(
   await transporter.sendMail({
     from: env.SMTP_FROM || env.SMTP_USER,
     to: userEmail,
-    subject: "Verify your pagelist account",
+    subject: "Verify your Pagelist account",
     html,
-    text: `Welcome to pagelist! Please verify your email by visiting: ${verificationLink}. This link expires in 5 minutes.`,
+    text: `Welcome to Pagelist! Please verify your email by visiting: ${verificationLink}. This link expires in 5 minutes.`,
   });
 }
 
@@ -124,12 +124,12 @@ function getPasswordResetEmailHTML(
 <body>
   <div class="container">
     <div class="header">
-      <div class="logo">pagelist</div>
+      <div class="logo">Pagelist</div>
     </div>
     <div class="content">
       <h1 class="greeting">Reset your password, ${userName}</h1>
       <p class="message">
-        We received a request to reset the password for your pagelist account. Click the button below to choose a new password.
+        We received a request to reset the password for your Pagelist account. Click the button below to choose a new password.
       </p>
       <p class="message">
         This link will expire in <strong>15 minutes</strong>. If you did not request a password reset, you can safely ignore this email — your account has not been changed.
@@ -144,8 +144,8 @@ function getPasswordResetEmailHTML(
       </div>
     </div>
     <div class="footer">
-      <p style="margin: 0;">© 2026 pagelist. All rights reserved.</p>
-      <p style="margin: 8px 0 0 0;"><a href="https://pagelist.local" class="footer-link">Visit pagelist</a></p>
+      <p style="margin: 0;">© 2026 Pagelist. All rights reserved.</p>
+      <p style="margin: 8px 0 0 0;"><a href="https://pagelist.local" class="footer-link">Visit Pagelist</a></p>
     </div>
   </div>
 </body>
@@ -166,8 +166,8 @@ export async function sendPasswordResetEmail(
   await transporter.sendMail({
     from: env.SMTP_FROM || env.SMTP_USER,
     to: userEmail,
-    subject: "Reset your pagelist password",
+    subject: "Reset your Pagelist password",
     html,
-    text: `Hello ${userName},\n\nWe received a request to reset your pagelist password. Visit the following link to choose a new password:\n\n${resetLink}\n\nThis link expires in 15 minutes. If you did not request this, please ignore this email.`,
+    text: `Hello ${userName},\n\nWe received a request to reset your Pagelist password. Visit the following link to choose a new password:\n\n${resetLink}\n\nThis link expires in 15 minutes. If you did not request this, please ignore this email.`,
   });
 }
