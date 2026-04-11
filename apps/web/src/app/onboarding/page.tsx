@@ -115,7 +115,6 @@ export default function OnboardingPage() {
         )}
 
         <Button
-          enabled={selectedGenres.length > 0 && !isPending}
           onClick={handleSubmit}
           disabled={selectedGenres.length === 0 || isPending}
           size="lg"
