@@ -8,6 +8,7 @@ import { Plus, MoreHorizontal, Pencil, Archive, Trash2, Eye, Loader2 } from "luc
 import { Button } from "@pagelist/ui/components/button";
 import { Badge } from "@pagelist/ui/components/badge";
 import { Skeleton } from "@pagelist/ui/components/skeleton";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@pagelist/ui/components/tabs";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -37,7 +38,6 @@ export default function AuthorBooksPage() {
   const tab = (searchParams.get("tab") as TabValue) || "PUBLISHED";
 
   const { data: books = [], isLoading } = useAuthorBooks();
-  const filtered = books.filter((b) => b.status === tab);
 
   function setTab(value: string) {
     const params = new URLSearchParams(searchParams.toString());
@@ -45,52 +45,50 @@ export default function AuthorBooksPage() {
     router.replace(`?${params.toString()}`);
   }
 
+  const filtered = books.filter((b) => b.status === tab);
+
   return (
     <div className="space-y-6">
       <PageHeader title="Your Books" subtitle="Manage your published, draft, and archived titles.">
-        <Button asChild className="bg-black text-white rounded-full hover:bg-neutral-800">
+        <Button asChild className="bg-[var(--color-brand-accent)] text-white rounded-full hover:bg-[var(--color-brand-accent-hover)]">
           <Link href={ROUTES.AUTHOR_BOOKS_NEW}>
             New Book
           </Link>
         </Button>
       </PageHeader>
 
-      <div className="flex gap-2">
-        {(["PUBLISHED", "DRAFT", "ARCHIVED"] as const).map((value) => (
-          <button
-            key={value}
-            onClick={() => setTab(value)}
-            className={`rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${
-              tab === value
-                ? "bg-black text-white"
-                : "bg-[var(--color-brand-surface-raised)] text-[var(--color-brand-muted)] hover:text-[var(--color-brand-primary)]"
-            }`}
-          >
-            {value === "PUBLISHED" ? "Published" : value === "DRAFT" ? "Drafts" : "Archived"}
-          </button>
-        ))}
-      </div>
+      <Tabs value={tab} onValueChange={setTab}>
+        <TabsList variant="default">
+          <TabsTrigger value="PUBLISHED">Published</TabsTrigger>
+          <TabsTrigger value="DRAFT">Drafts</TabsTrigger>
+          <TabsTrigger value="ARCHIVED">Archived</TabsTrigger>
+        </TabsList>
 
-      {isLoading ? (
-        <div className="space-y-3">
-          {Array.from({ length: 3 }).map((_, i) => (
-            <Skeleton key={i} className="h-24 rounded-lg" />
-          ))}
-        </div>
-      ) : filtered.length === 0 ? (
-        <EmptyState
-          title={`No ${tab.toLowerCase()} books`}
-          description={tab === "PUBLISHED" ? "Upload and publish your first book to see it here." : undefined}
-          actionLabel={tab === "DRAFT" ? "Start a new book" : undefined}
-          actionHref={tab === "DRAFT" ? ROUTES.AUTHOR_BOOKS_NEW : undefined}
-        />
-      ) : (
-        <div className="space-y-3">
-          {filtered.map((book) => (
-            <BookRow key={book.id} book={book} />
-          ))}
-        </div>
-      )}
+        {(["PUBLISHED", "DRAFT", "ARCHIVED"] as const).map((value) => (
+          <TabsContent key={value} value={value}>
+            {isLoading ? (
+              <div className="space-y-3 mt-4">
+                {Array.from({ length: 3 }).map((_, i) => (
+                  <Skeleton key={i} className="h-24 rounded-lg" />
+                ))}
+              </div>
+            ) : filtered.length === 0 ? (
+              <EmptyState
+                title={`No ${value.toLowerCase()} books`}
+                description={value === "PUBLISHED" ? "Upload and publish your first book to see it here." : undefined}
+                actionLabel={value === "DRAFT" ? "Start a new book" : undefined}
+                actionHref={value === "DRAFT" ? ROUTES.AUTHOR_BOOKS_NEW : undefined}
+              />
+            ) : (
+              <div className="space-y-3 mt-4">
+                {filtered.map((book) => (
+                  <BookRow key={book.id} book={book} />
+                ))}
+              </div>
+            )}
+          </TabsContent>
+        ))}
+      </Tabs>
     </div>
   );
 }
