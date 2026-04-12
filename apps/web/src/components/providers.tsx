@@ -51,7 +51,7 @@ export default function Providers({ children }: { children: ReactNode }) {
 
   // Initialize session on mount and listen for auth errors
   useEffect(() => {
-    // Try to fetch session from server
+    // Try to fetch session from server (only if user is authenticated)
     const initSession = async () => {
       try {
         const res = await apiClient.get<{ success: boolean; data?: { session: SessionData } }>(
@@ -62,8 +62,9 @@ export default function Providers({ children }: { children: ReactNode }) {
           setSession(sessionData);
           setAuthToken(sessionData.token);
         }
-      } catch {
-        // Session fetch failed or user not authenticated
+      } catch (e) {
+        // Session fetch failed (e.g., 401 for unauthenticated users is expected)
+        // This is normal for public pages
         setSession(null);
         setAuthToken(null);
       }
