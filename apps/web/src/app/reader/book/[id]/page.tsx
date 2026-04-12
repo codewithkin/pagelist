@@ -10,11 +10,11 @@ import { ROUTES } from "@/lib/routes";
 const STORAGE_KEY_PREFIX = "pagelist-reader-";
 
 const FONT_SIZES = [
-  { label: "A", value: 14 },
-  { label: "A", value: 16 },
-  { label: "A", value: 18 },
-  { label: "A", value: 20 },
-  { label: "A", value: 22 },
+  { label: "S", value: 14 },
+  { label: "M", value: 16 },
+  { label: "L", value: 18 },
+  { label: "XL", value: 20 },
+  { label: "2XL", value: 22 },
 ];
 
 // Fetch book content from API
