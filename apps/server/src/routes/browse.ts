@@ -1,5 +1,6 @@
 import { Hono } from "hono";
 import { requireAuth } from "@/middleware/require-auth";
+import { optionalAuth } from "@/middleware/optional-auth";
 import {
   handleGetPublishedBooks,
   handleGetPublishedBook,
@@ -15,15 +16,15 @@ import {
 
 const router = new Hono();
 
-// Public endpoints
-router.get("/", handleGetPublishedBooks);
+// Public endpoints with optional authentication
+router.get("/", optionalAuth, handleGetPublishedBooks);
 
 // Reader endpoints (must be before /:id to avoid conflict)
 router.get("/reader/orders", requireAuth, handleGetReaderOrders);
 router.get("/reader/library", requireAuth, handleGetReaderLibrary);
 
-// Individual book
-router.get("/:id", handleGetPublishedBook);
+// Individual book - with optional auth to allow reading owned/purchased books
+router.get("/:id", optionalAuth, handleGetPublishedBook);
 router.post("/:id/purchase", requireAuth, handlePurchaseBook);
 
 // Reviews

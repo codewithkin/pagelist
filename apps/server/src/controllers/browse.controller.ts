@@ -20,11 +20,17 @@ export async function handleGetPublishedBooks(c: Context) {
 export async function handleGetPublishedBook(c: Context) {
   const bookId = c.req.param("id");
   const userId = getUserId(c);
+  console.log(`[Browse] Fetching book: ${bookId}, UserId: ${userId || "anonymous"}`);
   try {
     const book = await BrowseService.getBookForReading(bookId, userId);
-    if (!book) return err(c, "Book not found.", 404);
+    if (!book) {
+      console.log(`[Browse] Book not found: ${bookId}`);
+      return err(c, "Book not found.", 404);
+    }
+    console.log(`[Browse] Book found: ${bookId}`);
     return ok(c, book);
   } catch (e) {
+    console.error(`[Browse] Error fetching book ${bookId}:`, e);
     return err(c, e instanceof Error ? e.message : "Failed to load book.", 500);
   }
 }

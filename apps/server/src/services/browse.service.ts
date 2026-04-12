@@ -84,33 +84,28 @@ export async function getBookForReading(
   bookId: string,
   userId?: string | null,
 ): Promise<PublicBook | null> {
-  // Build the where clause based on auth status
-  const whereClause: Parameters<typeof prisma.book.findFirst>[0]["where"] = {
-    id: bookId,
-  };
-
-  if (userId) {
-    // Authenticated: can read published, their own books, or purchased books
-    whereClause.OR = [
-      { status: "PUBLISHED" },
-      { authorId: userId },
-      { purchases: { some: { readerId: userId } } },
-    ];
-  } else {
-    // Unauthenticated: can only read published books
-    whereClause.status = "PUBLISHED";
-  }
-
-  const book = await prisma.book.findFirst({
-    where: whereClause,
+  // Fetch the book with book details first
+  const book = await prisma.book.findUnique({
+    where: { id: bookId },
     include: {
       author: { select: { name: true } },
       _count: { select: { purchases: true, reviews: true } },
       reviews: { select: { rating: true } },
+      purchases: { where: { readerId: userId || "" }, select: { id: true } },
     },
   });
 
   if (!book) return null;
+
+  // Check access permissions
+  const isPublished = book.status === "PUBLISHED";
+  const isAuthor = userId && book.authorId === userId;
+  const hasPurchased = userId && book.purchases.length > 0;
+
+  // Allow access if published OR user is author OR user purchased it
+  if (!isPublished && !isAuthor && !hasPurchased) {
+    return null;
+  }
 
   const avg = book.reviews.length > 0
     ? Math.round((book.reviews.reduce((s, r) => s + r.rating, 0) / book.reviews.length) * 10) / 10
