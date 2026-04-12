@@ -19,8 +19,9 @@ export async function handleGetPublishedBooks(c: Context) {
 
 export async function handleGetPublishedBook(c: Context) {
   const bookId = c.req.param("id");
+  const userId = getUserId(c);
   try {
-    const book = await BrowseService.getPublishedBook(bookId);
+    const book = await BrowseService.getBookForReading(bookId, userId);
     if (!book) return err(c, "Book not found.", 404);
     return ok(c, book);
   } catch (e) {

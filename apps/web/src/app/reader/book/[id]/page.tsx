@@ -26,7 +26,9 @@ function useBookContent(id: string) {
   useEffect(() => {
     (async () => {
       try {
-        const res = await fetch(`/api/browse/${id}`);
+        const res = await fetch(`/api/browse/${id}`, {
+          credentials: "include",
+        });
         if (!res.ok) {
           if (res.status === 404) {
             setError("Book not found");

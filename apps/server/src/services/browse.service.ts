@@ -79,6 +79,56 @@ export async function getPublishedBook(bookId: string): Promise<PublicBook | nul
   };
 }
 
+/* ── Get book for reading (published OR user's own books) ─────────────────── */
+export async function getBookForReading(
+  bookId: string,
+  userId?: string | null,
+): Promise<PublicBook | null> {
+  const book = await prisma.book.findFirst({
+    where: {
+      id: bookId,
+      OR: [
+        { status: "PUBLISHED" }, // Anyone can read published books
+        userId
+          ? {
+              OR: [
+                { authorId: userId }, // Authors can read their own books
+                { purchases: { some: { readerId: userId } } }, // Readers can read purchased books
+              ],
+            }
+          : undefined,
+      ].filter(Boolean),
+    },
+    include: {
+      author: { select: { name: true } },
+      _count: { select: { purchases: true, reviews: true } },
+      reviews: { select: { rating: true } },
+    },
+  });
+
+  if (!book) return null;
+
+  const avg = book.reviews.length > 0
+    ? Math.round((book.reviews.reduce((s, r) => s + r.rating, 0) / book.reviews.length) * 10) / 10
+    : 0;
+
+  return {
+    id: book.id,
+    title: book.title,
+    author: book.author.name,
+    description: book.description,
+    genre: book.genre,
+    language: book.language,
+    price: book.priceCents / 100,
+    discountPrice: book.discountPriceCents !== null ? book.discountPriceCents / 100 : null,
+    coverUrl: book.coverUrl,
+    totalSales: book._count.purchases,
+    averageRating: avg,
+    reviewCount: book._count.reviews,
+    createdAt: book.createdAt.toISOString(),
+  };
+}
+
 export interface OrderRecord {
   id: string;
   bookId: string;
