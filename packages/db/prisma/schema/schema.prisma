@@ -31,12 +31,13 @@ model User {
   createdAt                       DateTime @default(now())
   updatedAt                       DateTime @updatedAt
 
-  sessions      Session[]
-  books         Book[]         @relation("AuthoredBooks")
-  purchases     Purchase[]     @relation("PurchasedBooks")
-  reviews       Review[]       @relation("WrittenReviews")
-  payouts       Payout[]
-  payoutMethod  PayoutMethod?
+  sessions            Session[]
+  books               Book[]               @relation("AuthoredBooks")
+  purchases           Purchase[]           @relation("PurchasedBooks")
+  reviews             Review[]             @relation("WrittenReviews")
+  payouts             Payout[]
+  payoutMethod        PayoutMethod?
+  intermediatePayments IntermediatePayment[] @relation("PendingPayments")
 
   @@map("users")
 }
@@ -76,9 +77,10 @@ model Book {
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
 
-  author    User       @relation("AuthoredBooks", fields: [authorId], references: [id], onDelete: Cascade)
-  purchases Purchase[]
-  reviews   Review[]
+  author               User                 @relation("AuthoredBooks", fields: [authorId], references: [id], onDelete: Cascade)
+  purchases            Purchase[]
+  reviews              Review[]
+  intermediatePayments IntermediatePayment[]
 
   @@map("books")
 }
@@ -111,6 +113,23 @@ model Purchase {
 
   @@unique([readerId, bookId])
   @@map("purchases")
+}
+
+model IntermediatePayment {
+  id          String   @id @default(cuid())
+  readerId    String
+  bookId      String
+  bookTitle   String
+  amountCents Int
+  pollUrl     String?
+  paid        Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  expiresAt   DateTime
+
+  reader User @relation("PendingPayments", fields: [readerId], references: [id], onDelete: Cascade)
+  book   Book @relation(fields: [bookId], references: [id], onDelete: Cascade)
+
+  @@map("intermediate_payments")
 }
 
 enum PayoutStatus {

@@ -16,6 +16,7 @@ import {
   useAuthorBooks,
 } from "@/hooks/use-public";
 import { useLibraryBooks, usePurchaseBook } from "@/hooks/use-browse";
+import { useInitiatePayment } from "@/hooks/use-payments";
 import { useSession } from "@/hooks/use-auth";
 import { toast } from "sonner";
 import {
@@ -59,6 +60,7 @@ export default function BookDetailPage() {
   const { data: authorBooks } = useAuthorBooks(book?.authorId ?? "");
   const { data: library = [] } = useLibraryBooks();
   const purchaseBook = usePurchaseBook();
+  const initiatePayment = useInitiatePayment();
 
   const [descExpanded, setDescExpanded] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -94,9 +96,17 @@ export default function BookDetailPage() {
     if (!book) return;
     setPurchasing(true);
     try {
-      await purchaseBook.mutateAsync(book.id);
-      toast.success(`You now own "${book.title}".`);
-      setConfirmOpen(false);
+      const activeBookPrice = book.discountPrice ?? book.price;
+
+      if (activeBookPrice <= 0) {
+        await purchaseBook.mutateAsync(book.id);
+        toast.success(`You now own "${book.title}".`);
+        setConfirmOpen(false);
+        return;
+      }
+
+      const payment = await initiatePayment.mutateAsync(book.id);
+      window.location.assign(payment.redirectUrl);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Purchase failed.");
     } finally {

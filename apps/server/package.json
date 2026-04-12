@@ -10,14 +10,15 @@
     "start": "bun run dist/index.mjs"
   },
   "dependencies": {
-    "dotenv": "catalog:",
-    "zod": "catalog:",
-    "nodemailer": "^6.9.7",
-    "@pagelist/env": "workspace:*",
-    "@pagelist/db": "workspace:*",
     "@pagelist/auth": "workspace:*",
+    "@pagelist/db": "workspace:*",
+    "@pagelist/env": "workspace:*",
+    "@pagelist/payments": "workspace:*",
     "@pagelist/upload": "workspace:*",
-    "hono": "^4.8.2"
+    "dotenv": "catalog:",
+    "hono": "^4.8.2",
+    "nodemailer": "^6.9.7",
+    "zod": "catalog:"
   },
   "devDependencies": {
     "typescript": "^5",

@@ -40,7 +40,7 @@ function meta(c: Context) {
   };
 }
 
-function getVerificationBaseUrl(c: Context): string {
+function getVerificationBaseUrl(): string {
   // Use the frontend URL from environment, not from request headers
   // This ensures email links point to the correct frontend regardless of how the request is routed
   return env.FRONTEND_URL;
@@ -59,7 +59,7 @@ export async function handleSignUp(c: Context) {
   }
 
   try {
-    const verificationBaseUrl = getVerificationBaseUrl(c);
+    const verificationBaseUrl = getVerificationBaseUrl();
     const result = await AuthService.initiateSignUp(parsed.data, verificationBaseUrl);
     return created(c, {
       pendingVerification: true,
@@ -123,7 +123,7 @@ export async function handleResendVerificationEmail(c: Context) {
     return err(c, "Please enter a valid email address.", 422);
   }
 
-  const verificationBaseUrl = getVerificationBaseUrl(c);
+  const verificationBaseUrl = getVerificationBaseUrl();
   // Always returns success — prevents email enumeration
   const result = await AuthService.resendVerificationEmail(parsed.data.email, verificationBaseUrl);
 
@@ -171,7 +171,7 @@ export async function handleForgotPassword(c: Context) {
     return err(c, "Please enter a valid email address.", 422);
   }
 
-  const baseUrl = getVerificationBaseUrl(c);
+  const baseUrl = getVerificationBaseUrl();
   // Always returns success — prevents email enumeration
   await AuthService.requestPasswordReset(parsed.data.email, baseUrl);
 
@@ -188,7 +188,7 @@ export async function handleResetPassword(c: Context) {
 
   if (!parsed.success) {
     return err(c, parsed.error.issues[0]?.message ?? "Please check your input and try again.", 422);
-  }
+  } 
 
   try {
     await AuthService.resetPassword(parsed.data.token, parsed.data.password);

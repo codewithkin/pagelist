@@ -4,6 +4,7 @@ export const ROUTES = {
   BROWSE: "/browse",
   BOOK_DETAIL: (id: string) => `/book/${id}` as const,
   AUTHOR_PROFILE: (id: string) => `/author/${id}` as const,
+  PAYMENT_SUCCESS: "/payments/success",
 
   // Auth
   SIGNIN: "/auth/signin",

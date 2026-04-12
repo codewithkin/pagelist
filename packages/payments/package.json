@@ -1,0 +1,17 @@
+{
+  "name": "@pagelist/payments",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "paynow": "^2.2.2"
+  },
+  "devDependencies": {
+    "typescript": "^5",
+    "@types/bun": "catalog:",
+    "@pagelist/config": "workspace:*"
+  }
+}

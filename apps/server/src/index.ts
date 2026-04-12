@@ -13,6 +13,7 @@ import payoutsRouter from "@/routes/payouts";
 import browseRouter from "@/routes/browse";
 import publicRouter from "@/routes/public";
 import uploadRouter from "@/routes/upload";
+import paymentsRouter from "@/routes/payments";
 
 // Initialize R2 upload client (optional in development)
 if (
@@ -42,7 +43,7 @@ app.use(
       if (origin?.includes("localhost")) return origin || "*";
       // Allow the configured origin
       if (origin === env.CORS_ORIGIN) return origin;
-      return false;
+      return undefined;
     },
     credentials: true,
     allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
@@ -60,6 +61,7 @@ app.route("/api/payouts", payoutsRouter);
 app.route("/api/browse", browseRouter);
 app.route("/api/public", publicRouter);
 app.route("/api/upload", uploadRouter);
+app.route("/api/payments", paymentsRouter);
 
 app.get("/", (c) => c.text("OK"));
 

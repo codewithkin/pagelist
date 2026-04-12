@@ -70,6 +70,7 @@
         "@pagelist/auth": "workspace:*",
         "@pagelist/db": "workspace:*",
         "@pagelist/env": "workspace:*",
+        "@pagelist/payments": "workspace:*",
         "@pagelist/upload": "workspace:*",
         "dotenv": "catalog:",
         "hono": "^4.8.2",
@@ -162,6 +163,18 @@
         "@t3-oss/env-nextjs": "^0.13.1",
         "dotenv": "catalog:",
         "zod": "catalog:",
+      },
+      "devDependencies": {
+        "@pagelist/config": "workspace:*",
+        "@types/bun": "catalog:",
+        "typescript": "^5",
+      },
+    },
+    "packages/payments": {
+      "name": "@pagelist/payments",
+      "version": "0.0.0",
+      "dependencies": {
+        "paynow": "^2.2.2",
       },
       "devDependencies": {
         "@pagelist/config": "workspace:*",
@@ -739,6 +752,8 @@
     "@pagelist/db": ["@pagelist/db@workspace:packages/db"],
 
     "@pagelist/env": ["@pagelist/env@workspace:packages/env"],
+
+    "@pagelist/payments": ["@pagelist/payments@workspace:packages/payments"],
 
     "@pagelist/ui": ["@pagelist/ui@workspace:packages/ui"],
 
@@ -1756,6 +1771,8 @@
 
     "jose": ["jose@5.10.0", "", {}, "sha512-s+3Al/p9g32Iq+oqXxkW//7jk2Vig6FF1CFqzVXoTUXt2qz89YWbL+OwS17NFYEvxC35n0FKeGO2LGYSxeM2Gg=="],
 
+    "js-sha512": ["js-sha512@0.9.0", "", {}, "sha512-mirki9WS/SUahm+1TbAPkqvbCiCfOAAsyXeHxK1UkullnJVVqoJG2pL9ObvT05CN+tM7fxhfYm0NbXn+1hWoZg=="],
+
     "js-tokens": ["js-tokens@4.0.0", "", {}, "sha512-RdJUflcE3cUzKiMqQgsCu06FPu9UdIJO0beYbPhHN4k6apgJtifcoCtT9bcxOpYBtpD2kCM6Sbzg4CausW/PKQ=="],
 
     "js-yaml": ["js-yaml@4.1.1", "", { "dependencies": { "argparse": "^2.0.1" }, "bin": { "js-yaml": "bin/js-yaml.js" } }, "sha512-qQKT4zQxXl8lLwBtHMWwaTcGfFOZviOJet3Oy/xmGk2gZH677CJM9EvtfdSkgWcATZhj/55JZ0rmy3myCT5lsA=="],
@@ -2007,6 +2024,8 @@
     "path-to-regexp": ["path-to-regexp@6.3.0", "", {}, "sha512-Yhpw4T9C6hPpgPeA28us07OJeqZ5EzQTkbfwuhsUg0c237RomFoETJgmp2sa3F/41gfLE6G5cqcYwznmeEeOlQ=="],
 
     "pathe": ["pathe@2.0.3", "", {}, "sha512-WUjGcAqP1gQacoQe+OBJsFA7Ld4DyXuUIjZ5cc75cLHvJ7dtNsTugphxIADwspS+AraAUePCKrSVtPLFj/F88w=="],
+
+    "paynow": ["paynow@2.2.2", "", { "dependencies": { "axios": "^1.7.9", "js-sha512": "^0.9.0" } }, "sha512-v8uKtOtMDo8abfjo/inzQ14hKXmEVH1AwEyku5BhsyrxN6AbttGpSoGk5q/wSc8adzFYzdgo79wNfHmRyJTeTw=="],
 
     "perfect-debounce": ["perfect-debounce@1.0.0", "", {}, "sha512-xCy9V055GLEqoFaHoC1SoLIaLmWctgCUaBaWxDZ7/Zx4CTyX7cJQLJOok/orfjZAh9kEYpjJa4d0KcJmCbctZA=="],
 

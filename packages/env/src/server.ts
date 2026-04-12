@@ -20,6 +20,8 @@ export const env = createEnv({
     R2_BUCKET_NAME: z.string().min(1).optional(),
     R2_REGION: z.string().default("auto"),
     R2_PUBLIC_URL: z.string().min(1).optional(),
+    PAYNOW_INTEGRATION_ID: z.string().min(1).optional(),
+    PAYNOW_INTEGRATION_KEY: z.string().min(1).optional(),
   },
   runtimeEnv: process.env,
   emptyStringAsUndefined: true,
