@@ -89,6 +89,7 @@ export function BookPreviewDialog({ book, onClose }: BookPreviewDialogProps) {
                   src={book.coverUrl}
                   alt={book.title}
                   fill
+                  unoptimized
                   className="object-cover"
                   sizes="200px"
                 />

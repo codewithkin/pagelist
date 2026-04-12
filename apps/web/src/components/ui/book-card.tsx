@@ -22,6 +22,7 @@ export function BookCard({ book, variant, isNew, className }: BookCardProps) {
             src={book.coverUrl}
             alt={book.title}
             fill
+            unoptimized
             className="object-cover transition-transform duration-200 group-hover:scale-[1.02]"
             sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
           />

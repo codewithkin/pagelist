@@ -122,7 +122,7 @@ function BookRow({ book }: { book: Book }) {
       {/* Cover */}
       <div className="relative h-16 w-12 shrink-0 overflow-hidden rounded-md bg-[var(--color-brand-primary)]/5">
         {book.coverUrl ? (
-          <Image src={book.coverUrl} alt={book.title} fill className="object-cover" sizes="48px" />
+          <Image src={book.coverUrl} alt={book.title} fill unoptimized className="object-cover" sizes="48px" />
         ) : (
           <div className="flex h-full w-full items-center justify-center">
             <span

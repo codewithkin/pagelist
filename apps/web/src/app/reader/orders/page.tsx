@@ -39,6 +39,7 @@ export default function ReaderOrdersPage() {
                     src={order.bookCoverUrl}
                     alt={order.bookTitle}
                     fill
+                    unoptimized
                     className="object-cover"
                     sizes="48px"
                   />

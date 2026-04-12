@@ -160,6 +160,7 @@ export default function BookDetailPage() {
                 src={book.coverUrl}
                 alt={book.title}
                 fill
+                unoptimized
                 className="object-cover"
                 sizes="(max-width: 768px) 100vw, 33vw"
                 priority
