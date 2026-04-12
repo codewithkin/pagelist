@@ -9,7 +9,9 @@ import { Sheet, SheetContent, SheetTrigger } from "@pagelist/ui/components/sheet
 import { useSession } from "@/hooks/use-auth";
 
 const NAV_LINKS = [
-  { href: "/browse", label: "Browse" },
+  { href: "/browse", label: "Browse Books" },
+  { href: "/about", label: "About" },
+  { href: "/contact", label: "Contact" },
 ] as const;
 
 export function PublicNav() {

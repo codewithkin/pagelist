@@ -61,7 +61,13 @@ export function PublicFooter() {
             Navigate
           </p>
           <Link href="/browse" className="text-sm text-[var(--color-brand-muted)] transition-colors hover:text-[var(--color-brand-primary)]">
-            Browse
+            Browse Books
+          </Link>
+          <Link href="/about" className="text-sm text-[var(--color-brand-muted)] transition-colors hover:text-[var(--color-brand-primary)]">
+            About
+          </Link>
+          <Link href="/contact" className="text-sm text-[var(--color-brand-muted)] transition-colors hover:text-[var(--color-brand-primary)]">
+            Contact
           </Link>
           <PublishYourBookLink />
         </div>
