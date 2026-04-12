@@ -1,19 +1,17 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
-import { Search } from "lucide-react";
+import { Search, Tag } from "lucide-react";
 import { Input } from "@pagelist/ui/components/input";
-import { Button } from "@pagelist/ui/components/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@pagelist/ui/components/select";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@pagelist/ui/components/dialog";
 import { PageHeader } from "@/components/ui/page-header";
 import { BookCard } from "@/components/ui/book-card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { LoadingSkeleton } from "@/components/ui/loading-skeleton";
+import { BookPreviewDialog } from "@/components/ui/book-preview-dialog";
 import type { Book } from "@/types";
-import { useBrowseBooks, usePurchaseBook } from "@/hooks/use-browse";
-import { toast } from "sonner";
+import { useBrowseBooks } from "@/hooks/use-browse";
 
 const GENRES = ["Fiction", "Non-Fiction", "Science", "History", "Biography", "Fantasy", "Romance", "Mystery", "Self-Help", "Technology"];
 const SORT_OPTIONS = [
@@ -27,13 +25,15 @@ export default function ReaderBrowsePage() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
+  const [view, setView] = useState<"all" | "sale" | "free">(
+    () => (searchParams.get("view") as "all" | "sale" | "free") ?? "all"
+  );
   const [search, setSearch] = useState(searchParams.get("q") ?? "");
   const [activeGenre, setActiveGenre] = useState<string | null>(() => searchParams.get("genre"));
   const [sort, setSort] = useState(searchParams.get("sort") ?? "recent");
   const [buyBook, setBuyBook] = useState<Book | null>(null);
 
   const { data: allBooks = [], isLoading } = useBrowseBooks();
-  const purchaseBook = usePurchaseBook();
 
   const hasFilters = activeGenre !== null || sort !== "recent";
 
@@ -44,17 +44,20 @@ export default function ReaderBrowsePage() {
   }
 
   // sync to URL
-  useMemo(() => {
+  useEffect(() => {
     const params = new URLSearchParams();
+    if (view !== "all") params.set("view", view);
     if (search) params.set("q", search);
     if (activeGenre) params.set("genre", activeGenre);
     if (sort !== "recent") params.set("sort", sort);
     const str = params.toString();
     router.replace(str ? `?${str}` : "?", { scroll: false });
-  }, [search, activeGenre, sort, router]);
+  }, [view, search, activeGenre, sort, router]);
 
   const filtered = useMemo(() => {
     let list = allBooks.filter((b) => {
+      if (view === "sale" && b.discountPrice === null) return false;
+      if (view === "free" && b.price !== 0) return false;
       if (search && !b.title.toLowerCase().includes(search.toLowerCase())) return false;
       if (activeGenre && b.genre !== activeGenre) return false;
       return true;
@@ -72,23 +75,60 @@ export default function ReaderBrowsePage() {
     return list;
   }, [allBooks, search, activeGenre, sort]);
 
-  async function handleConfirmPurchase() {
-    if (!buyBook) return;
-    try {
-      await purchaseBook.mutateAsync(buyBook.id);
-      toast.success(`You now own "${buyBook.title}". Find it in your library.`);
-      setBuyBook(null);
-    } catch (e: unknown) {
-      toast.error(e instanceof Error ? e.message : "Purchase failed.");
-    }
-  }
+  const saleCount = useMemo(() => allBooks.filter((b) => b.discountPrice !== null).length, [allBooks]);
+  const freeCount = useMemo(() => allBooks.filter((b) => b.price === 0).length, [allBooks]);
 
   return (
     <div className="space-y-8">
       <PageHeader title="Discover thoughtfully curated books." centered />
 
+      {/* View toggle: All / On Sale */}
+      <div className="flex items-center gap-1 border-b border-[var(--color-brand-border)]">
+        <button
+          onClick={() => setView("all")}
+          className={`relative px-4 pb-3 pt-1 text-sm font-medium transition-colors ${
+            view === "all"
+              ? "text-[var(--color-brand-primary)] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-[var(--color-brand-primary)]"
+              : "text-[var(--color-brand-muted)] hover:text-[var(--color-brand-primary)]"
+          }`}
+        >
+          All books
+        </button>
+        <button
+          onClick={() => setView("free")}
+          className={`relative flex items-center gap-1.5 px-4 pb-3 pt-1 text-sm font-medium transition-colors ${
+            view === "free"
+              ? "text-[var(--color-brand-primary)] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-[var(--color-brand-primary)]"
+              : "text-[var(--color-brand-muted)] hover:text-[var(--color-brand-primary)]"
+          }`}
+        >
+          Free
+          {freeCount > 0 && (
+            <span className="rounded-full bg-[var(--color-brand-primary)] px-1.5 py-0.5 text-[10px] font-semibold leading-none text-white">
+              {freeCount}
+            </span>
+          )}
+        </button>
+        <button
+          onClick={() => setView("sale")}
+          className={`relative flex items-center gap-1.5 px-4 pb-3 pt-1 text-sm font-medium transition-colors ${
+            view === "sale"
+              ? "text-[var(--color-brand-primary)] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-[var(--color-brand-primary)]"
+              : "text-[var(--color-brand-muted)] hover:text-[var(--color-brand-primary)]"
+          }`}
+        >
+          <Tag size={13} />
+          On sale
+          {saleCount > 0 && (
+            <span className="rounded-full bg-red-500 px-1.5 py-0.5 text-[10px] font-semibold leading-none text-white">
+              {saleCount}
+            </span>
+          )}
+        </button>
+      </div>
+
       {/* Category pill bar */}
-      <div className="mt-8 mb-6 flex flex-wrap items-center gap-2">
+      <div className="mb-6 flex flex-wrap items-center gap-2">
         <button
           onClick={() => setActiveGenre(null)}
           className={`rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${
@@ -157,32 +197,7 @@ export default function ReaderBrowsePage() {
         )}
       </div>
 
-      {/* Buy confirmation dialog */}
-      <Dialog open={!!buyBook} onOpenChange={(open) => !open && setBuyBook(null)}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Confirm purchase</DialogTitle>
-            <DialogDescription>
-              You are about to purchase <strong>{buyBook?.title}</strong> for{" "}
-              <strong>${buyBook?.price.toFixed(2)}</strong>.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setBuyBook(null)} className="rounded-full">Cancel</Button>
-            <Button
-              onClick={handleConfirmPurchase}
-              disabled={purchaseBook.isPending}
-              className="bg-black text-white rounded-full hover:bg-neutral-800"
-            >
-              Complete Purchase
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </div>
-  );
-}
-      </Dialog>
+      <BookPreviewDialog book={buyBook} onClose={() => setBuyBook(null)} />
     </div>
   );
 }
