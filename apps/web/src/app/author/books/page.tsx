@@ -162,26 +162,26 @@ function BookRow({ book }: { book: Book }) {
             <MoreHorizontal size={16} />
           </button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="flex flex-row">
+        <DropdownMenuContent align="end">
           <DropdownMenuItem asChild>
-            <Link href={ROUTES.AUTHOR_BOOKS_EDIT(book.id)}>
+            <Link href={ROUTES.AUTHOR_BOOKS_EDIT(book.id)} className="flex flex-row">
               <Pencil size={14} className="mr-2" />
               Edit
             </Link>
           </DropdownMenuItem>
           {book.status === "PUBLISHED" && (
             <DropdownMenuItem asChild>
-              <Link href={ROUTES.READER_BOOK(book.id)}>
+              <Link href={ROUTES.READER_BOOK(book.id)} className="flex flex-row">
                 <Eye size={14} className="mr-2" />
                 View as Reader
               </Link>
             </DropdownMenuItem>
           )}
-          <DropdownMenuItem onClick={handleArchive} className="text-[var(--color-brand-muted)]">
+          <DropdownMenuItem onClick={handleArchive} className="text-[var(--color-brand-muted)] flex flex-row">
             {updateBook.isPending ? <Loader2 size={14} className="mr-2 animate-spin" /> : <Archive size={14} className="mr-2" />}
             {book.status === "ARCHIVED" ? "Unarchive" : "Archive"}
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={handleDelete} className="text-[var(--color-brand-danger)]">
+          <DropdownMenuItem onClick={handleDelete} className="text-[var(--color-brand-danger)] flex flex-row">
             {deleteBook.isPending ? <Loader2 size={14} className="mr-2 animate-spin" /> : <Trash2 size={14} className="mr-2" />}
             Delete
           </DropdownMenuItem>
