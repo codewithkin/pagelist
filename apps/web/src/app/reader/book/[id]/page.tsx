@@ -5,6 +5,7 @@ import Link from "next/link";
 import { ArrowLeft, ChevronLeft, ChevronRight, Minus, Plus } from "lucide-react";
 import { cn } from "@pagelist/ui/lib/utils";
 import { Button } from "@pagelist/ui/components/button";
+import { ApiError, apiGet } from "@/lib/api-client";
 import { ROUTES } from "@/lib/routes";
 
 const STORAGE_KEY_PREFIX = "pagelist-reader-";
@@ -26,19 +27,7 @@ function useBookContent(id: string) {
   useEffect(() => {
     (async () => {
       try {
-        const res = await fetch(`/api/browse/${id}`, {
-          credentials: "include",
-        });
-        if (!res.ok) {
-          if (res.status === 404) {
-            setError("Book not found");
-          } else {
-            setError(`Failed to fetch book (${res.status})`);
-          }
-          setData(null);
-          return;
-        }
-        const book = await res.json();
+        const book = await apiGet<{ title: string }>(`/api/browse/${id}`);
         // TODO: Fetch actual chapters from backend
         // For now, return demo chapters
         setData({
@@ -51,7 +40,15 @@ function useBookContent(id: string) {
         });
         setError(null);
       } catch (e) {
-        setError("Failed to load book");
+        if (e instanceof ApiError) {
+          if (e.status === 404) {
+            setError("Book not found");
+          } else {
+            setError(e.message || "Failed to load book");
+          }
+        } else {
+          setError("Failed to load book");
+        }
         setData(null);
       } finally {
         setIsLoading(false);
