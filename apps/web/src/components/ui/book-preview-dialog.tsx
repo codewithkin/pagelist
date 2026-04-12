@@ -10,6 +10,7 @@ import { cn } from "@pagelist/ui/lib/utils";
 import type { Book } from "@/types";
 import { useBookReviews, useLibraryBooks, usePurchaseBook } from "@/hooks/use-browse";
 import { useSession } from "@/hooks/use-auth";
+import { useInitiatePayment } from "@/hooks/use-payments";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 
@@ -44,6 +45,7 @@ export function BookPreviewDialog({ book, onClose }: BookPreviewDialogProps) {
   const { data: reviewData } = useBookReviews(book?.id ?? "");
   const { data: library = [] } = useLibraryBooks();
   const purchaseBook = usePurchaseBook();
+  const initiatePayment = useInitiatePayment();
 
   const [purchasing, setPurchasing] = useState(false);
 
@@ -63,9 +65,18 @@ export function BookPreviewDialog({ book, onClose }: BookPreviewDialogProps) {
     }
     setPurchasing(true);
     try {
-      await purchaseBook.mutateAsync(book!.id);
-      toast.success(`You now own "${book!.title}". Find it in your library.`);
-      onClose();
+      // Check if book is free or paid
+      if (activePrice <= 0) {
+        // Free book - instant purchase
+        await purchaseBook.mutateAsync(book!.id);
+        toast.success(`You now own "${book!.title}". Find it in your library.`);
+        onClose();
+        return;
+      }
+
+      // Paid book - initiate payment
+      const payment = await initiatePayment.mutateAsync(book!.id);
+      window.location.assign(payment.redirectUrl);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Purchase failed.");
     } finally {

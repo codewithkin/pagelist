@@ -198,13 +198,21 @@ export async function purchaseBook(readerId: string, bookId: string): Promise<Or
   const book = await prisma.book.findFirst({ where: { id: bookId, status: "PUBLISHED" } });
   if (!book) throw new Error("Book not found.");
 
+  // Check if book requires payment
+  const bookPrice = book.discountPriceCents ?? book.priceCents;
+  if (bookPrice > 0) {
+    throw new Error(
+      "This book requires payment. Use the payment flow to purchase it.",
+    );
+  }
+
   const existing = await prisma.purchase.findUnique({
     where: { readerId_bookId: { readerId, bookId } },
   });
   if (existing) throw new Error("You already own this book.");
 
   const purchase = await prisma.purchase.create({
-    data: { readerId, bookId, amountPaid: book.discountPriceCents ?? book.priceCents },
+    data: { readerId, bookId, amountPaid: 0 },
     include: {
       book: { include: { author: { select: { name: true } } } },
     },

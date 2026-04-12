@@ -43,7 +43,12 @@ export async function handlePurchaseBook(c: Context) {
     const order = await BrowseService.purchaseBook(userId, bookId);
     return created(c, order, "Purchase successful.");
   } catch (e) {
-    return err(c, e instanceof Error ? e.message : "Failed to complete purchase.", 500);
+    const message = e instanceof Error ? e.message : "Failed to complete purchase.";
+    // Check if error is about payment being required
+    if (message.includes("requires payment")) {
+      return err(c, message, 422);
+    }
+    return err(c, message, 500);
   }
 }
 

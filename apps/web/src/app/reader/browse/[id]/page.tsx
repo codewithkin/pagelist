@@ -21,8 +21,7 @@ import { Button } from "@pagelist/ui/components/button";
 import { Textarea } from "@pagelist/ui/components/textarea";
 import { Separator } from "@pagelist/ui/components/separator";
 import { cn } from "@pagelist/ui/lib/utils";
-import {
-  useBookDetail,
+import { useBookDetail,
   useBookReviews,
   useMyReview,
   useAddReview,
@@ -32,6 +31,7 @@ import {
   useLibraryBooks,
 } from "@/hooks/use-browse";
 import { useSession } from "@/hooks/use-auth";
+import { useInitiatePayment } from "@/hooks/use-payments";
 import { toast } from "sonner";
 import type { Review } from "@/types";
 
@@ -156,6 +156,7 @@ export default function BookDetailPage() {
   const updateReview = useUpdateReview(bookId);
   const deleteReview = useDeleteReview(bookId);
   const purchaseBook = usePurchaseBook();
+  const initiatePayment = useInitiatePayment();
 
   const [reviewRating, setReviewRating] = useState(0);
   const [reviewComment, setReviewComment] = useState("");
@@ -209,9 +210,21 @@ export default function BookDetailPage() {
       router.push("/auth/signin");
       return;
     }
+    if (!book) return;
     try {
-      await purchaseBook.mutateAsync(bookId);
-      toast.success(`You now own "${book?.title}". Find it in your library.`);
+      const activePrice = book.discountPrice ?? book.price;
+
+      // Check if book is free or paid
+      if (activePrice <= 0) {
+        // Free book - instant purchase
+        await purchaseBook.mutateAsync(bookId);
+        toast.success(`You now own "${book.title}". Find it in your library.`);
+        return;
+      }
+
+      // Paid book - initiate payment
+      const payment = await initiatePayment.mutateAsync(bookId);
+      window.location.assign(payment.redirectUrl);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Purchase failed.");
     }
