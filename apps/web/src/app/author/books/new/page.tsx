@@ -369,7 +369,7 @@ function StepUpload({ form, update }: { form: FormData; update: (p: Partial<Form
         />
       )}
 
-      {/* PDF upload */}}
+      {/* PDF upload */}
       <div className="space-y-1.5">
         <Label>PDF File *</Label>
         {form.pdfFile ? (
