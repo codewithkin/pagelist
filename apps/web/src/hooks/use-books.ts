@@ -26,6 +26,7 @@ export interface CreateBookPayload {
   genre: string;
   language: string;
   priceCents: number;
+  discountPriceCents?: number | null;
   coverUrl?: string | null;
   fileUrl?: string | null;
   status?: "DRAFT" | "PUBLISHED" | "ARCHIVED";

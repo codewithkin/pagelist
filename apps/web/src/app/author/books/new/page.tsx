@@ -15,12 +15,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@pagelist/ui/components/select";
+import { Switch } from "@pagelist/ui/components/switch";
 import { Separator } from "@pagelist/ui/components/separator";
 import { PageHeader } from "@/components/ui/page-header";
 import { PriceTag } from "@/components/ui/price-tag";
 import { ROUTES } from "@/lib/routes";
 import { toast } from "sonner";
 import { useCreateBook } from "@/hooks/use-books";
+import { useUploadBook, useUploadCover } from "@/hooks/use-upload";
+import { CoverCropModal } from "@/components/ui/cover-crop-modal";
 
 const GENRES = [
   "Fiction", "Non-Fiction", "Self-Help", "Technology", "Science",
@@ -40,6 +43,9 @@ interface FormData {
   coverFile: File | null;
   pdfFile: File | null;
   price: string;
+  isFree: boolean;
+  discountEnabled: boolean;
+  discountPrice: string;
 }
 
 const STORAGE_KEY = "pagelist-new-book-draft";
@@ -56,6 +62,9 @@ function loadDraft(): Partial<FormData> {
       genre: parsed.genre || "",
       language: parsed.language || "",
       price: parsed.price || "",
+      isFree: parsed.isFree ?? false,
+      discountEnabled: parsed.discountEnabled ?? false,
+      discountPrice: parsed.discountPrice || "",
     };
   } catch {
     return {};
@@ -72,6 +81,9 @@ function saveDraft(data: FormData) {
         genre: data.genre,
         language: data.language,
         price: data.price,
+        isFree: data.isFree,
+        discountEnabled: data.discountEnabled,
+        discountPrice: data.discountPrice,
       }),
     );
   } catch {
@@ -83,6 +95,8 @@ export default function NewBookPage() {
   const router = useRouter();
   const [step, setStep] = useState(0);
   const createBook = useCreateBook();
+  const uploadPdf = useUploadBook();
+  const uploadCover = useUploadCover();
 
   const [form, setForm] = useState<FormData>(() => ({
     title: "",
@@ -92,6 +106,9 @@ export default function NewBookPage() {
     coverFile: null,
     pdfFile: null,
     price: "",
+    isFree: false,
+    discountEnabled: false,
+    discountPrice: "",
     ...loadDraft(),
   }));
 
@@ -105,23 +122,49 @@ export default function NewBookPage() {
   }
 
   function canAdvance(): boolean {
-    if (step === 0) return !!(form.title.trim() && form.genre && form.language);
+    if (step === 0) return !!(form.title.trim() && form.genre && form.language && form.description.length <= 200);
     if (step === 1) return !!form.pdfFile;
-    if (step === 2) return !!form.price && Number(form.price) >= 0;
+    if (step === 2) {
+      if (form.isFree) return true;
+      if (!form.price || Number(form.price) <= 0) return false;
+      if (form.discountEnabled) {
+        if (!form.discountPrice || Number(form.discountPrice) <= 0) return false;
+        if (Number(form.discountPrice) >= Number(form.price)) return false;
+      }
+      return true;
+    }
     return true;
   }
 
   async function handleSubmit() {
     try {
-      const priceCents = Math.round(Number(form.price) * 100);
+      let pdfUrl: string | null = null;
+      let coverUrl: string | null = null;
+
+      if (form.pdfFile) {
+        const res = await uploadPdf.mutateAsync(form.pdfFile);
+        pdfUrl = res.url;
+      }
+      if (form.coverFile) {
+        const res = await uploadCover.mutateAsync(form.coverFile);
+        coverUrl = res.url;
+      }
+
+      const priceCents = form.isFree ? 0 : Math.round(Number(form.price) * 100);
+      const discountPriceCents =
+        !form.isFree && form.discountEnabled && form.discountPrice
+          ? Math.round(Number(form.discountPrice) * 100)
+          : null;
+
       await createBook.mutateAsync({
         title: form.title.trim(),
         description: form.description.trim(),
         genre: form.genre,
         language: form.language,
         priceCents,
-        coverUrl: null,
-        fileUrl: null,
+        discountPriceCents,
+        coverUrl,
+        fileUrl: pdfUrl,
         status: "PUBLISHED",
       });
       localStorage.removeItem(STORAGE_KEY);
@@ -199,11 +242,13 @@ export default function NewBookPage() {
         ) : (
           <Button
             onClick={handleSubmit}
-            disabled={createBook.isPending}
+            disabled={createBook.isPending || uploadPdf.isPending || uploadCover.isPending}
             className="bg-black text-white rounded-full hover:bg-neutral-800"
           >
-            {createBook.isPending && <Loader2 size={16} className="mr-1.5 animate-spin" />}
-            Publish Book
+            {(createBook.isPending || uploadPdf.isPending || uploadCover.isPending) && (
+              <Loader2 size={16} className="mr-1.5 animate-spin" />
+            )}
+            {uploadPdf.isPending ? "Uploading PDF…" : uploadCover.isPending ? "Uploading cover…" : "Publish Book"}
           </Button>
         )}
       </div>
@@ -228,11 +273,16 @@ function StepDetails({ form, update }: { form: FormData; update: (p: Partial<For
       </div>
 
       <div className="space-y-1.5">
-        <Label htmlFor="description">Description</Label>
+        <div className="flex items-center justify-between">
+          <Label htmlFor="description">Description</Label>
+          <span className={`text-xs ${form.description.length > 200 ? "text-red-500" : "text-[var(--color-brand-muted)]"}`}>
+            {form.description.length}/200
+          </span>
+        </div>
         <Textarea
           id="description"
           value={form.description}
-          onChange={(e) => update({ description: e.target.value })}
+          onChange={(e) => update({ description: e.target.value.slice(0, 200) })}
           placeholder="A short summary of your book…"
           rows={4}
           className="border-[var(--color-brand-border)] resize-none"
@@ -275,6 +325,8 @@ function StepDetails({ form, update }: { form: FormData; update: (p: Partial<For
 /* ── Step 2: Upload ──────────────────────────────────────────── */
 
 function StepUpload({ form, update }: { form: FormData; update: (p: Partial<FormData>) => void }) {
+  const [cropFile, setCropFile] = useState<File | null>(null);
+
   const onDropPdf = useCallback(
     (accepted: File[]) => {
       if (accepted[0]) update({ pdfFile: accepted[0] });
@@ -284,9 +336,9 @@ function StepUpload({ form, update }: { form: FormData; update: (p: Partial<Form
 
   const onDropCover = useCallback(
     (accepted: File[]) => {
-      if (accepted[0]) update({ coverFile: accepted[0] });
+      if (accepted[0]) setCropFile(accepted[0]);
     },
-    [update],
+    [],
   );
 
   const pdfZone = useDropzone({
@@ -305,7 +357,19 @@ function StepUpload({ form, update }: { form: FormData; update: (p: Partial<Form
 
   return (
     <div className="space-y-6">
-      {/* PDF upload */}
+      {/* Crop modal */}
+      {cropFile && (
+        <CoverCropModal
+          file={cropFile}
+          onDone={(cropped) => {
+            update({ coverFile: cropped });
+            setCropFile(null);
+          }}
+          onCancel={() => setCropFile(null)}
+        />
+      )}
+
+      {/* PDF upload */}}
       <div className="space-y-1.5">
         <Label>PDF File *</Label>
         {form.pdfFile ? (
@@ -348,8 +412,19 @@ function StepUpload({ form, update }: { form: FormData; update: (p: Partial<Form
               className="h-16 w-12 rounded-md object-cover"
             />
             <span className="flex-1 truncate text-sm text-[var(--color-brand-primary)]">{form.coverFile.name}</span>
-            <button type="button" onClick={() => update({ coverFile: null })} className="text-[var(--color-brand-muted)] hover:text-[var(--color-brand-danger)]">
+            <button
+              type="button"
+              onClick={() => update({ coverFile: null })}
+              className="text-[var(--color-brand-muted)] hover:text-[var(--color-brand-danger)]"
+            >
               <X size={16} />
+            </button>
+            <button
+              type="button"
+              onClick={() => setCropFile(form.coverFile!)}
+              className="text-xs text-[var(--color-brand-muted)] underline hover:text-[var(--color-brand-primary)]"
+            >
+              Re-crop
             </button>
           </div>
         ) : (
@@ -360,8 +435,9 @@ function StepUpload({ form, update }: { form: FormData; update: (p: Partial<Form
             <input {...coverZone.getInputProps()} />
             <Upload size={20} className="text-[var(--color-brand-muted)]" />
             <p className="text-sm text-[var(--color-brand-muted)]">
-              Upload a cover image (PNG, JPG, WebP — max 5 MB)
+              Upload a cover image — you'll be able to crop it to fit
             </p>
+            <p className="text-xs text-[var(--color-brand-muted)]">PNG, JPG, WebP &mdash; max 5 MB</p>
           </div>
         )}
       </div>
@@ -372,44 +448,116 @@ function StepUpload({ form, update }: { form: FormData; update: (p: Partial<Form
 /* ── Step 3: Pricing ─────────────────────────────────────────── */
 
 function StepPricing({ form, update }: { form: FormData; update: (p: Partial<FormData>) => void }) {
+  const price = Number(form.price);
+  const discountPrice = Number(form.discountPrice);
+  const discountValid = form.discountEnabled && form.discountPrice && discountPrice > 0 && discountPrice < price;
+
   return (
     <div className="space-y-5">
-      <div className="space-y-1.5">
-        <Label htmlFor="price">Price (USD) *</Label>
-        <div className="relative">
-          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-[var(--color-brand-muted)]">$</span>
-          <Input
-            id="price"
-            type="number"
-            min="0"
-            step="0.01"
-            value={form.price}
-            onChange={(e) => update({ price: e.target.value })}
-            placeholder="0.00"
-            className="border-[var(--color-brand-border)] pl-7"
-          />
+      {/* Free toggle */}
+      <div className="flex items-center justify-between rounded-lg border border-[var(--color-brand-border)] px-4 py-3">
+        <div>
+          <p className="text-sm font-medium text-[var(--color-brand-primary)]">Free book</p>
+          <p className="text-xs text-[var(--color-brand-muted)]">Readers can download for free — no purchase required</p>
         </div>
-        <p className="text-xs text-[var(--color-brand-muted)]">
-          Set to 0 for a free book. PageList takes a 20% platform fee on paid sales.
-        </p>
+        <Switch
+          checked={form.isFree}
+          onCheckedChange={(v) =>
+            update({
+              isFree: v,
+              price: v ? "0" : "",
+              discountEnabled: false,
+              discountPrice: "",
+            })
+          }
+        />
       </div>
 
-      {Number(form.price) > 0 && (
-        <div className="rounded-lg bg-[var(--color-brand-surface)] p-4 text-sm">
-          <div className="flex items-center justify-between">
-            <span className="text-[var(--color-brand-muted)]">Reader pays</span>
-            <PriceTag amount={Number(form.price)} />
+      {!form.isFree && (
+        <>
+          <div className="space-y-1.5">
+            <Label htmlFor="price">Price (USD) *</Label>
+            <div className="relative">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-[var(--color-brand-muted)]">$</span>
+              <Input
+                id="price"
+                type="number"
+                min="0.01"
+                step="0.01"
+                value={form.price}
+                onChange={(e) => update({ price: e.target.value })}
+                placeholder="0.00"
+                className="border-[var(--color-brand-border)] pl-7"
+              />
+            </div>
+            <p className="text-xs text-[var(--color-brand-muted)]">
+              PageList takes a 20% platform fee on paid sales.
+            </p>
           </div>
-          <div className="mt-2 flex items-center justify-between">
-            <span className="text-[var(--color-brand-muted)]">Platform fee (20%)</span>
-            <span className="text-[var(--color-brand-muted)]">−${(Number(form.price) * 0.2).toFixed(2)}</span>
-          </div>
-          <Separator className="my-2 bg-[var(--color-brand-border)]" />
-          <div className="flex items-center justify-between font-medium">
-            <span className="text-[var(--color-brand-primary)]">You earn</span>
-            <PriceTag amount={Number(form.price) * 0.8} />
-          </div>
-        </div>
+
+          {/* Discount toggle */}
+          {price > 0 && (
+            <div className="flex items-center justify-between rounded-lg border border-[var(--color-brand-border)] px-4 py-3">
+              <div>
+                <p className="text-sm font-medium text-[var(--color-brand-primary)]">Discount price</p>
+                <p className="text-xs text-[var(--color-brand-muted)]">Show a sale price alongside the original</p>
+              </div>
+              <Switch
+                checked={form.discountEnabled}
+                onCheckedChange={(v) => update({ discountEnabled: v, discountPrice: v ? form.discountPrice : "" })}
+              />
+            </div>
+          )}
+
+          {form.discountEnabled && price > 0 && (
+            <div className="space-y-1.5">
+              <Label htmlFor="discountPrice">Discount price (USD) *</Label>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-[var(--color-brand-muted)]">$</span>
+                <Input
+                  id="discountPrice"
+                  type="number"
+                  min="0.01"
+                  step="0.01"
+                  value={form.discountPrice}
+                  onChange={(e) => update({ discountPrice: e.target.value })}
+                  placeholder="0.00"
+                  className="border-[var(--color-brand-border)] pl-7"
+                />
+              </div>
+              {form.discountPrice && !discountValid && (
+                <p className="text-xs text-red-500">Discount price must be lower than the original price.</p>
+              )}
+            </div>
+          )}
+
+          {price > 0 && (
+            <div className="rounded-lg bg-[var(--color-brand-surface)] p-4 text-sm">
+              <div className="flex items-center justify-between">
+                <span className="text-[var(--color-brand-muted)]">Reader pays</span>
+                {discountValid ? (
+                  <span className="flex items-center gap-2">
+                    <span className="line-through text-[var(--color-brand-muted)] text-xs">${price.toFixed(2)}</span>
+                    <PriceTag amount={discountPrice} />
+                  </span>
+                ) : (
+                  <PriceTag amount={price} />
+                )}
+              </div>
+              <div className="mt-2 flex items-center justify-between">
+                <span className="text-[var(--color-brand-muted)]">Platform fee (20%)</span>
+                <span className="text-[var(--color-brand-muted)]">
+                  −${((discountValid ? discountPrice : price) * 0.2).toFixed(2)}
+                </span>
+              </div>
+              <Separator className="my-2 bg-[var(--color-brand-border)]" />
+              <div className="flex items-center justify-between font-medium">
+                <span className="text-[var(--color-brand-primary)]">You earn</span>
+                <PriceTag amount={(discountValid ? discountPrice : price) * 0.8} />
+              </div>
+            </div>
+          )}
+        </>
       )}
     </div>
   );
@@ -425,7 +573,10 @@ function StepReview({ form }: { form: FormData }) {
     ["Language", form.language],
     ["PDF File", form.pdfFile?.name ?? "—"],
     ["Cover Image", form.coverFile?.name ?? "None"],
-    ["Price", form.price ? `$${Number(form.price).toFixed(2)}` : "Free"],
+    ["Price", form.isFree ? "FREE" : (form.price ? `$${Number(form.price).toFixed(2)}` : "—")],
+    ...(form.discountEnabled && form.discountPrice
+      ? [["Discount Price", `$${Number(form.discountPrice).toFixed(2)}`] as [string, string]]
+      : []),
   ];
 
   return (
