@@ -12,6 +12,16 @@ export function useUploadBook() {
   });
 }
 
+export function useUploadCover() {
+  return useMutation({
+    mutationFn: async (file: File): Promise<UploadResult> => {
+      const formData = new FormData();
+      formData.append("file", file);
+      return apiUpload("/api/upload/book-cover", formData);
+    },
+  });
+}
+
 export function useUploadProfilePicture() {
   return useMutation({
     mutationFn: async (file: File): Promise<UploadResult> => {
