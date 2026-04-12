@@ -21,7 +21,9 @@ import { PageHeader } from "@/components/ui/page-header";
 import { DangerZone } from "@/components/ui/danger-zone";
 import { ROUTES } from "@/lib/routes";
 import { useAuthorBook, useUpdateBook, useDeleteBook } from "@/hooks/use-books";
-import { useUploadBook } from "@/hooks/use-upload";
+import { useUploadBook, useUploadCover } from "@/hooks/use-upload";
+import { CoverCropModal } from "@/components/ui/cover-crop-modal";
+import { Switch } from "@pagelist/ui/components/switch";
 import { toast } from "sonner";
 
 const GENRES = [
@@ -41,6 +43,7 @@ export default function EditBookPage({ params }: { params: Promise<{ id: string 
   const updateBook = useUpdateBook(id);
   const deleteBook = useDeleteBook();
   const uploadBook = useUploadBook();
+  const uploadCover = useUploadCover();
 
   // Pre-populate with existing data
   const [title, setTitle] = useState("");
@@ -50,7 +53,9 @@ export default function EditBookPage({ params }: { params: Promise<{ id: string 
   const [price, setPrice] = useState("");
   const [replaceFile, setReplaceFile] = useState<File | null>(null);
   const [replaceCover, setReplaceCover] = useState<File | null>(null);
+  const [cropFile, setCropFile] = useState<File | null>(null);
   const [fileUrl, setFileUrl] = useState<string | null>(null);
+  const [isFree, setIsFree] = useState(false);
 
   // Load book data when it arrives
   useEffect(() => {
@@ -60,6 +65,7 @@ export default function EditBookPage({ params }: { params: Promise<{ id: string 
       setGenre(book.genre);
       setLanguage(book.language);
       setPrice(String(book.price));
+      setIsFree(book.price === 0);
     }
   }, [book]);
 
@@ -74,7 +80,7 @@ export default function EditBookPage({ params }: { params: Promise<{ id: string 
 
   const coverZone = useDropzone({
     onDrop: useCallback((accepted: File[]) => {
-      if (accepted[0]) setReplaceCover(accepted[0]);
+      if (accepted[0]) setCropFile(accepted[0]);
     }, []),
     accept: { "image/*": [".png", ".jpg", ".jpeg", ".webp"] },
     maxFiles: 1,
@@ -85,6 +91,7 @@ export default function EditBookPage({ params }: { params: Promise<{ id: string 
     setIsSaving(true);
     try {
       let uploadedFileUrl = fileUrl;
+      let uploadedCoverUrl: string | undefined;
 
       // Upload PDF if a new file was selected
       if (replaceFile) {
@@ -93,13 +100,20 @@ export default function EditBookPage({ params }: { params: Promise<{ id: string 
         setFileUrl(result.url);
       }
 
+      // Upload cover if a new cover was selected
+      if (replaceCover) {
+        const result = await uploadCover.mutateAsync(replaceCover);
+        uploadedCoverUrl = result.url;
+      }
+
       await updateBook.mutateAsync({
         title,
         description,
         genre,
         language,
-        priceCents: Math.round(Number(price) * 100),
+        priceCents: isFree ? 0 : Math.round(Number(price) * 100),
         ...(uploadedFileUrl && { fileUrl: uploadedFileUrl }),
+        ...(uploadedCoverUrl && { coverUrl: uploadedCoverUrl }),
       });
       toast.success("Book updated successfully.");
       router.push(ROUTES.AUTHOR_BOOKS);
@@ -187,10 +201,26 @@ export default function EditBookPage({ params }: { params: Promise<{ id: string 
 
             <div className="space-y-1.5">
               <Label htmlFor="price">Price (USD)</Label>
-              <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-[var(--color-brand-muted)]">$</span>
-                <Input id="price" type="number" min="0" step="0.01" value={price} onChange={(e) => setPrice(e.target.value)} className="border-[var(--color-brand-border)] pl-7" />
+              <div className="flex items-center justify-between rounded-lg border border-[var(--color-brand-border)] px-4 py-3 mb-2">
+                <div>
+                  <p className="text-sm font-medium text-[var(--color-brand-primary)]">Free book</p>
+                  <p className="text-xs text-[var(--color-brand-muted)]">Readers can download for free</p>
+                </div>
+                <Switch
+                  checked={isFree}
+                  onCheckedChange={(v) => {
+                    setIsFree(v);
+                    if (v) setPrice("0");
+                    else setPrice("");
+                  }}
+                />
               </div>
+              {!isFree && (
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-[var(--color-brand-muted)]">$</span>
+                  <Input id="price" type="number" min="0.01" step="0.01" value={price} onChange={(e) => setPrice(e.target.value)} className="border-[var(--color-brand-border)] pl-7" />
+                </div>
+              )}
             </div>
           </section>
 
@@ -238,11 +268,30 @@ export default function EditBookPage({ params }: { params: Promise<{ id: string 
               Cover Image
             </h2>
 
+            {/* Crop modal */}
+            {cropFile && (
+              <CoverCropModal
+                file={cropFile}
+                onDone={(cropped) => {
+                  setReplaceCover(cropped);
+                  setCropFile(null);
+                }}
+                onCancel={() => setCropFile(null)}
+              />
+            )}
+
             {replaceCover ? (
               <div className="flex items-center gap-3 rounded-lg border border-[var(--color-brand-border)] bg-[var(--color-brand-surface)] p-3">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={URL.createObjectURL(replaceCover)} alt="Cover" className="h-16 w-12 rounded-md object-cover" />
                 <span className="flex-1 truncate text-sm">{replaceCover.name}</span>
+                <button
+                  type="button"
+                  onClick={() => setCropFile(replaceCover)}
+                  className="text-xs text-[var(--color-brand-muted)] underline hover:text-[var(--color-brand-primary)]"
+                >
+                  Re-crop
+                </button>
                 <button type="button" onClick={() => setReplaceCover(null)} className="text-[var(--color-brand-muted)] hover:text-[var(--color-brand-danger)]">
                   <X size={16} />
                 </button>
@@ -254,7 +303,7 @@ export default function EditBookPage({ params }: { params: Promise<{ id: string 
               >
                 <input {...coverZone.getInputProps()} />
                 <Upload size={20} className="text-[var(--color-brand-muted)]" />
-                <p className="text-sm text-[var(--color-brand-muted)]">Upload a new cover image</p>
+                <p className="text-sm text-[var(--color-brand-muted)]">Upload a new cover image — you'll be able to crop it</p>
               </div>
             )}
           </section>
@@ -263,11 +312,11 @@ export default function EditBookPage({ params }: { params: Promise<{ id: string 
           <div className="flex justify-end">
             <Button
               onClick={handleSave}
-              disabled={isSaving || uploadBook.isPending || !title.trim()}
+              disabled={isSaving || uploadBook.isPending || uploadCover.isPending || !title.trim()}
               className="bg-black text-white rounded-full hover:bg-neutral-800"
             >
-              {(isSaving || uploadBook.isPending) && <Loader2 size={16} className="mr-1.5 animate-spin" />}
-              {uploadBook.isPending ? "Uploading..." : "Save Changes"}
+              {(isSaving || uploadBook.isPending || uploadCover.isPending) && <Loader2 size={16} className="mr-1.5 animate-spin" />}
+              {uploadBook.isPending ? "Uploading PDF…" : uploadCover.isPending ? "Uploading cover…" : "Save Changes"}
             </Button>
           </div>
 
