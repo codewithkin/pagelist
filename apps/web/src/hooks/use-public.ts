@@ -10,6 +10,7 @@ export function useFeaturedBooks() {
     queryFn: () =>
       apiGet<CatalogueResult>("/api/public/catalogue?sort=recent&limit=6"),
     staleTime: 5 * 60 * 1000,
+    retry: false,
   });
 }
 
@@ -22,6 +23,7 @@ export function useGenreBooks(genre: string | null) {
       apiGet<CatalogueResult>(`/api/public/catalogue?genre=${encodeURIComponent(genre!)}&limit=6`),
     staleTime: 5 * 60 * 1000,
     enabled: !!genre,
+    retry: false,
   });
 }
 
@@ -49,6 +51,7 @@ export function useCatalogue(params: {
     queryKey: ["public", "catalogue", key],
     queryFn: () => apiGet<CatalogueResult>(`/api/public/catalogue?${key}`),
     staleTime: 2 * 60 * 1000,
+    retry: false,
   });
 }
 
@@ -59,6 +62,7 @@ export function useGenres() {
     queryKey: ["public", "genres"],
     queryFn: () => apiGet<string[]>("/api/public/genres"),
     staleTime: 10 * 60 * 1000,
+    retry: false,
   });
 }
 

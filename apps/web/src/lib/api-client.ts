@@ -44,8 +44,9 @@ apiClient.interceptors.request.use((config) => {
 apiClient.interceptors.response.use(
   (response) => response,
   (error: AxiosError<ApiResponse<unknown>>) => {
-    // Handle 401 Unauthorized - redirect to sign-in
-    if (error.response?.status === 401) {
+    // Handle 401 Unauthorized - redirect to sign-in  
+    // But only if we actually have an auth token (authenticated user)
+    if (error.response?.status === 401 && authToken) {
       // Dispatch custom event so app can redirect
       window.dispatchEvent(
         new CustomEvent("auth:unauthorized", {
