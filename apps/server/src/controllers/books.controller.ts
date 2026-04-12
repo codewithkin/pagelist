@@ -36,11 +36,16 @@ export async function handleCreateBook(c: Context) {
   if (!userId) return err(c, "Unauthorized", 401);
   try {
     const body = await c.req.json();
-    const { title, description, genre, language, priceCents, coverUrl, fileUrl, status } = body;
+    const { title, description, genre, language, priceCents, discountPriceCents, coverUrl, fileUrl, status } = body;
     if (!title?.trim()) return err(c, "Title is required.");
     if (!genre?.trim()) return err(c, "Genre is required.");
     if (!language?.trim()) return err(c, "Language is required.");
     if (typeof priceCents !== "number" || priceCents < 0) return err(c, "Invalid price.");
+    if (discountPriceCents !== undefined && discountPriceCents !== null) {
+      if (typeof discountPriceCents !== "number" || discountPriceCents < 0 || discountPriceCents >= priceCents) {
+        return err(c, "Discount price must be a positive number less than the original price.");
+      }
+    }
 
     const book = await BooksService.createBook(userId, {
       title: title.trim(),
@@ -48,6 +53,7 @@ export async function handleCreateBook(c: Context) {
       genre: genre.trim(),
       language: language.trim(),
       priceCents,
+      discountPriceCents: discountPriceCents ?? null,
       coverUrl: coverUrl ?? null,
       fileUrl: fileUrl ?? null,
       status: status ?? "DRAFT",
@@ -64,7 +70,7 @@ export async function handleUpdateBook(c: Context) {
   const bookId = c.req.param("id");
   try {
     const body = await c.req.json();
-    const { title, description, genre, language, priceCents, coverUrl, fileUrl, status } = body;
+    const { title, description, genre, language, priceCents, discountPriceCents, coverUrl, fileUrl, status } = body;
 
     const patch: BooksService.UpdateBookInput = {};
     if (title !== undefined) patch.title = title.trim();
@@ -72,6 +78,7 @@ export async function handleUpdateBook(c: Context) {
     if (genre !== undefined) patch.genre = genre.trim();
     if (language !== undefined) patch.language = language.trim();
     if (priceCents !== undefined) patch.priceCents = priceCents;
+    if (discountPriceCents !== undefined) patch.discountPriceCents = discountPriceCents;
     if (coverUrl !== undefined) patch.coverUrl = coverUrl;
     if (fileUrl !== undefined) patch.fileUrl = fileUrl;
     if (status !== undefined) patch.status = status;

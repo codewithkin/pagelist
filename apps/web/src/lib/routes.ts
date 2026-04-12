@@ -1,7 +1,15 @@
 export const ROUTES = {
+  // Public
+  HOME: "/",
+  BROWSE: "/browse",
+  BOOK_DETAIL: (id: string) => `/book/${id}` as const,
+  AUTHOR_PROFILE: (id: string) => `/author/${id}` as const,
+
   // Auth
   SIGNIN: "/auth/signin",
   SIGNUP: "/auth/signup",
+  LOGIN: "/login",
+  LOGIN_SIGNUP: "/signup",
   FORGOT_PASSWORD: "/auth/forgot-password",
   RESET_PASSWORD: "/auth/reset-password",
   ONBOARDING: "/onboarding",

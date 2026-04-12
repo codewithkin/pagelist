@@ -11,6 +11,7 @@ import booksRouter from "@/routes/books";
 import earningsRouter from "@/routes/earnings";
 import payoutsRouter from "@/routes/payouts";
 import browseRouter from "@/routes/browse";
+import publicRouter from "@/routes/public";
 import uploadRouter from "@/routes/upload";
 
 // Initialize R2 upload client (optional in development)
@@ -55,6 +56,7 @@ app.route("/api/books", booksRouter);
 app.route("/api/earnings", earningsRouter);
 app.route("/api/payouts", payoutsRouter);
 app.route("/api/browse", browseRouter);
+app.route("/api/public", publicRouter);
 app.route("/api/upload", uploadRouter);
 
 app.get("/", (c) => c.text("OK"));
