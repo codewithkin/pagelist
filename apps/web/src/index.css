@@ -1,4 +1,5 @@
 @import '@pagelist/ui/globals.css';
+@import 'react-image-crop/dist/ReactCrop.css';
 
 /* Pagelist design tokens */
 :root {
