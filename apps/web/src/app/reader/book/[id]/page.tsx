@@ -21,12 +21,21 @@ const FONT_SIZES = [
 function useBookContent(id: string) {
   const [data, setData] = useState<{ title: string; chapters: Array<{ title: string; content: string }> } | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     (async () => {
       try {
         const res = await fetch(`/api/browse/${id}`);
-        if (!res.ok) throw new Error("Failed to fetch book");
+        if (!res.ok) {
+          if (res.status === 404) {
+            setError("Book not found");
+          } else {
+            setError(`Failed to fetch book (${res.status})`);
+          }
+          setData(null);
+          return;
+        }
         const book = await res.json();
         // TODO: Fetch actual chapters from backend
         // For now, return demo chapters
@@ -38,20 +47,22 @@ function useBookContent(id: string) {
             { title: "Chapter 3", content: "<p>More content in chapter three...</p>" },
           ],
         });
-      } catch {
-        setData({ title: "Unable to load book", chapters: [] });
+        setError(null);
+      } catch (e) {
+        setError("Failed to load book");
+        setData(null);
       } finally {
         setIsLoading(false);
       }
     })();
   }, [id]);
 
-  return { title: data?.title ?? "", chapters: data?.chapters ?? [], isLoading };
+  return { title: data?.title ?? "", chapters: data?.chapters ?? [], isLoading, error };
 }
 
 export default function ReaderBookPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
-  const { title, chapters, isLoading } = useBookContent(id);
+  const { title, chapters, isLoading, error } = useBookContent(id);
 
   const [chapterIndex, setChapterIndex] = useState(0);
   const [fontSizeIndex, setFontSizeIndex] = useState(1);
@@ -126,6 +137,25 @@ export default function ReaderBookPage({ params }: { params: Promise<{ id: strin
     return (
       <div className="flex h-svh items-center justify-center bg-[var(--color-brand-surface)]">
         <div className="h-5 w-5 animate-spin rounded-full border-2 border-[var(--color-brand-primary)] border-t-transparent" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex h-svh flex-col items-center justify-center bg-[var(--color-brand-surface)] px-4 text-center">
+        <h1 className="text-3xl font-bold text-[var(--color-brand-primary)]">
+          {error === "Book not found" ? "404" : "Error"}
+        </h1>
+        <p className="mt-2 text-sm text-[var(--color-brand-muted)]">
+          {error}
+        </p>
+        <Link
+          href={ROUTES.READER_LIBRARY}
+          className="mt-6 rounded-full bg-black px-6 py-2.5 text-sm font-medium text-white transition-colors hover:bg-neutral-800"
+        >
+          Back to Library
+        </Link>
       </div>
     );
   }
