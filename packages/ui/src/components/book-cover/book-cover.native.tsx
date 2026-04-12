@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { View, Image, Text } from "react-native";
-import { cn } from "../lib/utils";
+import { cn } from "../../lib/utils";
 import type { BookCoverProps } from "./book-cover.types";
 
 /**
