@@ -48,22 +48,50 @@ export function BookCard({ book, variant, isNew, className }: BookCardProps) {
       </div>
 
       <div className="flex items-start justify-between pt-3">
-        <h3
-          className={cn(
-            "text-sm font-medium leading-snug text-[var(--color-brand-primary)]",
-            variant === "library" ? "line-clamp-2" : "line-clamp-1",
-          )}
-          style={{ fontFamily: "var(--font-body)" }}
-        >
-          {book.title}
-        </h3>
-        {variant === "browse" ? (
-          <span
-            className="ml-3 shrink-0 text-sm font-semibold text-[var(--color-brand-primary)]"
-            style={{ fontFamily: "var(--font-mono), monospace" }}
+        <div className="min-w-0 flex-1">
+          <h3
+            className={cn(
+              "font-semibold leading-snug text-[var(--color-brand-primary)]",
+              variant === "library" ? "line-clamp-2 text-sm" : "line-clamp-1 text-[15px]",
+            )}
+            style={{ fontFamily: "var(--font-display), serif" }}
           >
-            ${book.price}
-          </span>
+            {book.title}
+          </h3>
+          {variant === "browse" && (
+            <>
+              <p className="mt-0.5 text-xs text-[var(--color-brand-muted)]">{book.author}</p>
+              {book.description && (
+                <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-[var(--color-brand-muted)]/70">
+                  {book.description}
+                </p>
+              )}
+            </>
+          )}
+        </div>
+        {variant === "browse" ? (
+          <div className="ml-3 shrink-0 text-right">
+            {book.discountPrice !== null ? (
+              <div className="flex flex-col items-end gap-0.5">
+                <span className="text-xs line-through text-[var(--color-brand-muted)]">
+                  ${book.price.toFixed(2)}
+                </span>
+                <span
+                  className="text-sm font-bold text-[var(--color-brand-primary)]"
+                  style={{ fontFamily: "var(--font-mono), monospace" }}
+                >
+                  ${book.discountPrice.toFixed(2)}
+                </span>
+              </div>
+            ) : (
+              <span
+                className="text-sm font-semibold text-[var(--color-brand-primary)]"
+                style={{ fontFamily: "var(--font-mono), monospace" }}
+              >
+                {book.price === 0 ? "Free" : `$${book.price.toFixed(2)}`}
+              </span>
+            )}
+          </div>
         ) : (
           <span className="ml-3 shrink-0 text-sm text-[var(--color-brand-muted)] transition-colors group-hover:text-[var(--color-brand-primary)]">
             Read &rarr;

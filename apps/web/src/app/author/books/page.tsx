@@ -50,7 +50,7 @@ export default function AuthorBooksPage() {
   return (
     <div className="space-y-6">
       <PageHeader title="Your Books" subtitle="Manage your published, draft, and archived titles.">
-        <Button asChild className="bg-[var(--color-brand-accent)] text-white rounded-full hover:bg-[var(--color-brand-accent-hover)]">
+        <Button asChild className="bg-[var(--color-brand-accent)] text-white rounded-full hover:opacity-90">
           <Link href={ROUTES.AUTHOR_BOOKS_NEW}>
             New Book
           </Link>
