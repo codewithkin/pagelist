@@ -162,7 +162,7 @@ function BookRow({ book }: { book: Book }) {
             <MoreHorizontal size={16} />
           </button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end">
+        <DropdownMenuContent align="end" className="flex flex-row">
           <DropdownMenuItem asChild>
             <Link href={ROUTES.AUTHOR_BOOKS_EDIT(book.id)}>
               <Pencil size={14} className="mr-2" />
