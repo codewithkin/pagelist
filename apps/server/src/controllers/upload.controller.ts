@@ -1,5 +1,5 @@
 import { Context } from "hono";
-import { uploadBookPdf, uploadProfilePicture } from "@/services/upload.service";
+import { uploadBookPdf, uploadBookCover, uploadProfilePicture } from "@/services/upload.service";
 import type { AuthenticatedUser } from "@pagelist/auth/types";
 
 export async function handleUploadBookPdf(c: Context) {
@@ -26,6 +26,38 @@ export async function handleUploadBookPdf(c: Context) {
     return c.json(result, 200);
   } catch (error) {
     console.error("Book PDF upload error:", error);
+    return c.json(
+      { error: error instanceof Error ? error.message : "Upload failed" },
+      500
+    );
+  }
+}
+
+export async function handleUploadBookCover(c: Context) {
+  try {
+    const user = c.get("user") as AuthenticatedUser;
+    if (!user) {
+      return c.json({ error: "Unauthorized" }, 401);
+    }
+
+    const formData = await c.req.formData();
+    const file = formData.get("file");
+
+    if (!file || !(file instanceof File)) {
+      return c.json({ error: "No file provided" }, 400);
+    }
+
+    const validMimes = ["image/jpeg", "image/png", "image/webp"];
+    if (!validMimes.includes(file.type)) {
+      return c.json({ error: "Only JPEG, PNG or WebP images are allowed" }, 400);
+    }
+
+    const buffer = await file.arrayBuffer();
+    const result = await uploadBookCover(user.id, file.name, Buffer.from(buffer));
+
+    return c.json(result, 200);
+  } catch (error) {
+    console.error("Book cover upload error:", error);
     return c.json(
       { error: error instanceof Error ? error.message : "Upload failed" },
       500

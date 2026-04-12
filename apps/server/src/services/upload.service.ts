@@ -35,6 +35,21 @@ export async function uploadProfilePicture(
   });
 }
 
+export async function uploadBookCover(
+  userId: string,
+  filename: string,
+  buffer: Buffer
+): Promise<UploadResult> {
+  const key = generateKey("cover", userId, filename);
+
+  return uploadFile({
+    bucket: "pagelist",
+    key,
+    contentType: getMimeType(filename),
+    body: buffer,
+  });
+}
+
 export async function deleteUploadedFile(key: string): Promise<void> {
   return deleteFile(key);
 }
