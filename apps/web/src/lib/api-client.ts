@@ -46,7 +46,8 @@ apiClient.interceptors.response.use(
   (error: AxiosError<ApiResponse<unknown>>) => {
     // Handle 401 Unauthorized - redirect to sign-in
     // But only for authenticated requests, not for public endpoints
-    const isPublicEndpoint = error.config?.url?.includes("/api/public/");
+    const url = error.config?.url || "";
+    const isPublicEndpoint = url.includes("/api/public/");
     if (error.response?.status === 401 && authToken && !isPublicEndpoint) {
       // Dispatch custom event so app can redirect
       window.dispatchEvent(
