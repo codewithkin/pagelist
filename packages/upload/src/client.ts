@@ -44,8 +44,8 @@ export async function uploadFile(options: UploadOptions): Promise<UploadResult> 
   try {
     await client.send(command);
     
-    // Construct the public URL for the uploaded file
-    const publicUrl = `https://${cfg.bucketName}.${cfg.accountId}.r2.dev/${options.key}`;
+    // Use the configured public URL for the uploaded file
+    const publicUrl = `${cfg.publicUrl}/${options.key}`;
 
     return {
       url: publicUrl,

@@ -18,4 +18,5 @@ export interface UploadConfig {
   secretAccessKey: string;
   bucketName: string;
   region: string;
+  publicUrl: string;
 }

@@ -19,7 +19,8 @@ if (
   env.R2_ACCOUNT_ID &&
   env.R2_ACCESS_KEY_ID &&
   env.R2_SECRET_ACCESS_KEY &&
-  env.R2_BUCKET_NAME
+  env.R2_BUCKET_NAME &&
+  env.R2_PUBLIC_URL
 ) {
   initializeUploadClient({
     accountId: env.R2_ACCOUNT_ID,
@@ -27,6 +28,7 @@ if (
     secretAccessKey: env.R2_SECRET_ACCESS_KEY,
     bucketName: env.R2_BUCKET_NAME,
     region: env.R2_REGION || "auto",
+    publicUrl: env.R2_PUBLIC_URL,
   });
 }
 
