@@ -8,6 +8,7 @@ export interface BookRecord {
   genre: string;
   language: string;
   price: number; // dollars, derived from priceCents
+  discountPrice: number | null;
   coverUrl: string | null;
   fileUrl: string | null;
   status: "PUBLISHED" | "DRAFT" | "ARCHIVED";
@@ -24,6 +25,7 @@ function toRecord(
     genre: string;
     language: string;
     priceCents: number;
+    discountPriceCents: number | null;
     coverUrl: string | null;
     fileUrl: string | null;
     status: BookStatus;
@@ -39,6 +41,7 @@ function toRecord(
     genre: book.genre,
     language: book.language,
     price: book.priceCents / 100,
+    discountPrice: book.discountPriceCents !== null ? book.discountPriceCents / 100 : null,
     coverUrl: book.coverUrl,
     fileUrl: book.fileUrl,
     status: book.status as "PUBLISHED" | "DRAFT" | "ARCHIVED",
@@ -72,6 +75,7 @@ export interface CreateBookInput {
   genre: string;
   language: string;
   priceCents: number;
+  discountPriceCents?: number | null;
   coverUrl?: string | null;
   fileUrl?: string | null;
   status?: BookStatus;
@@ -86,6 +90,7 @@ export async function createBook(authorId: string, input: CreateBookInput): Prom
       genre: input.genre,
       language: input.language,
       priceCents: input.priceCents,
+      discountPriceCents: input.discountPriceCents ?? null,
       coverUrl: input.coverUrl ?? null,
       fileUrl: input.fileUrl ?? null,
       status: input.status ?? "DRAFT",
@@ -101,6 +106,7 @@ export interface UpdateBookInput {
   genre?: string;
   language?: string;
   priceCents?: number;
+  discountPriceCents?: number | null;
   coverUrl?: string | null;
   fileUrl?: string | null;
   status?: BookStatus;

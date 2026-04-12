@@ -34,6 +34,7 @@ model User {
   sessions      Session[]
   books         Book[]         @relation("AuthoredBooks")
   purchases     Purchase[]     @relation("PurchasedBooks")
+  reviews       Review[]       @relation("WrittenReviews")
   payouts       Payout[]
   payoutMethod  PayoutMethod?
 
@@ -61,14 +62,15 @@ enum BookStatus {
 }
 
 model Book {
-  id          String     @id @default(cuid())
-  title       String
-  description String
-  genre       String
-  language    String
-  priceCents  Int        @default(0)
-  coverUrl    String?
-  fileUrl     String?
+  id                 String     @id @default(cuid())
+  title              String
+  description        String
+  genre              String
+  language           String
+  priceCents         Int        @default(0)
+  discountPriceCents Int?
+  coverUrl           String?
+  fileUrl            String?
   status      BookStatus @default(DRAFT)
   authorId    String
   createdAt   DateTime   @default(now())
@@ -76,8 +78,25 @@ model Book {
 
   author    User       @relation("AuthoredBooks", fields: [authorId], references: [id], onDelete: Cascade)
   purchases Purchase[]
+  reviews   Review[]
 
   @@map("books")
+}
+
+model Review {
+  id        String   @id @default(cuid())
+  bookId    String
+  readerId  String
+  rating    Int
+  comment   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  book   Book @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  reader User @relation("WrittenReviews", fields: [readerId], references: [id], onDelete: Cascade)
+
+  @@unique([readerId, bookId])
+  @@map("reviews")
 }
 
 model Purchase {
