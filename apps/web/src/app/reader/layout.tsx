@@ -1,14 +1,15 @@
 "use client";
 
+import { Library, Search, ShoppingBag, Settings } from "lucide-react";
 import ResponsiveNavbar from "@/components/responsive-navbar";
 import { ROUTES } from "@/lib/routes";
 
 const readerNav = [
-  { href: ROUTES.READER_LIBRARY, label: "Library" },
-  { href: ROUTES.READER_BROWSE, label: "Browse" },
-  { href: ROUTES.READER_ORDERS, label: "Orders" },
-  { href: ROUTES.READER_SETTINGS, label: "Settings" },
-] as const;
+  { href: ROUTES.READER_LIBRARY, label: "Library", icon: Library },
+  { href: ROUTES.READER_BROWSE, label: "Browse", icon: Search },
+  { href: ROUTES.READER_ORDERS, label: "Orders", icon: ShoppingBag },
+  { href: ROUTES.READER_SETTINGS, label: "Settings", icon: Settings },
+];
 
 export default function ReaderLayout({ children }: { children: React.ReactNode }) {
   return (

@@ -1,15 +1,16 @@
 "use client";
 
+import { LayoutDashboard, BookOpen, TrendingUp, Banknote, Settings } from "lucide-react";
 import ResponsiveNavbar from "@/components/responsive-navbar";
 import { ROUTES } from "@/lib/routes";
 
 const authorNav = [
-  { href: ROUTES.AUTHOR_WORKSPACE, label: "Workspace" },
-  { href: ROUTES.AUTHOR_BOOKS, label: "Books" },
-  { href: ROUTES.AUTHOR_EARNINGS, label: "Earnings" },
-  { href: ROUTES.AUTHOR_PAYOUTS, label: "Payouts" },
-  { href: ROUTES.AUTHOR_SETTINGS, label: "Settings" },
-] as const;
+  { href: ROUTES.AUTHOR_WORKSPACE, label: "Workspace", icon: LayoutDashboard },
+  { href: ROUTES.AUTHOR_BOOKS, label: "Books", icon: BookOpen },
+  { href: ROUTES.AUTHOR_EARNINGS, label: "Earnings", icon: TrendingUp },
+  { href: ROUTES.AUTHOR_PAYOUTS, label: "Payouts", icon: Banknote },
+  { href: ROUTES.AUTHOR_SETTINGS, label: "Settings", icon: Settings },
+];
 
 export default function AuthorLayout({ children }: { children: React.ReactNode }) {
   return (
