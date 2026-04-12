@@ -3,11 +3,11 @@
 import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import Image from "next/image";
 import { Eye, EyeOff, Loader2, BookOpen, PenTool } from "lucide-react";
 import { Button } from "@pagelist/ui/components/button";
 import { Input } from "@pagelist/ui/components/input";
 import { Label } from "@pagelist/ui/components/label";
+import { BookCover } from "@pagelist/ui/components/book-cover";
 import { cn } from "@pagelist/ui/lib/utils";
 import { useSignUpWithVerification } from "@/hooks/use-email-verification";
 import { useBookSummary } from "@/hooks/use-public";
@@ -99,21 +99,12 @@ export default function SignUpPage() {
         {/* Purchase intent callout */}
         {intent === "purchase" && intentBook && (
           <div className="mb-6 mt-4 flex items-center gap-3 rounded-xl bg-[var(--color-brand-surface)] p-3">
-            {intentBook.coverUrl ? (
-              <div className="relative h-12 w-8 shrink-0 overflow-hidden rounded">
-                <Image
-                  src={intentBook.coverUrl}
-                  alt={intentBook.title}
-                  fill
-                  className="object-cover"
-                  sizes="32px"
-                />
-              </div>
-            ) : (
-              <div className="flex h-12 w-8 shrink-0 items-center justify-center rounded bg-[var(--color-brand-primary)]">
-                <span className="text-[8px] font-medium text-white/80">PDF</span>
-              </div>
-            )}
+            <BookCover
+              coverUrl={intentBook.coverUrl}
+              title={intentBook.title}
+              size="sm"
+              className="h-12 w-8 shrink-0"
+            />
             <p className="text-xs text-[var(--color-brand-muted)]">
               Sign up to purchase{" "}
               <span className="font-medium text-[var(--color-brand-primary)]">

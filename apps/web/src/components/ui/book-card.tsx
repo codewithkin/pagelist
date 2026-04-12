@@ -1,7 +1,7 @@
-import Image from "next/image";
 import Link from "next/link";
 import { ArrowUpRight } from "lucide-react";
 import { cn } from "@pagelist/ui/lib/utils";
+import { BookCover } from "@pagelist/ui/components/book-cover";
 import type { Book } from "@/types";
 
 interface BookCardProps {
@@ -16,26 +16,12 @@ export function BookCard({ book, variant, isNew, className }: BookCardProps) {
 
   return (
     <Link href={href} className={cn("group flex flex-col cursor-pointer", className)}>
-      <div className="relative aspect-[2/3] w-full overflow-hidden rounded-lg">
-        {book.coverUrl ? (
-          <Image
-            src={book.coverUrl}
-            alt={book.title}
-            fill
-            unoptimized
-            className="object-cover transition-transform duration-200 group-hover:scale-[1.02]"
-            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-          />
-        ) : (
-          <div className="flex h-full w-full items-center justify-center bg-[var(--color-brand-primary)] transition-transform duration-200 group-hover:scale-[1.02]">
-            <span
-              className="px-4 text-center text-sm font-medium leading-tight text-white/80"
-              style={{ fontFamily: "var(--font-display), 'Playfair Display', serif" }}
-            >
-              {book.title}
-            </span>
-          </div>
-        )}
+      <div className="relative w-full overflow-hidden rounded-lg">
+        <BookCover
+          coverUrl={book.coverUrl}
+          title={book.title}
+          className="w-full transition-transform duration-200 group-hover:scale-[1.02]"
+        />
 
         {isNew && (
           <span className="absolute top-3 left-3 rounded-full bg-red-500 px-3 py-1 text-xs font-semibold text-white">

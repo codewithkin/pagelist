@@ -2,13 +2,13 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import Image from "next/image";
 import { useSearchParams, useRouter } from "next/navigation";
 import { Plus, MoreHorizontal, Pencil, Archive, Trash2, Eye, Loader2 } from "lucide-react";
 import { Button } from "@pagelist/ui/components/button";
 import { Badge } from "@pagelist/ui/components/badge";
 import { Skeleton } from "@pagelist/ui/components/skeleton";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@pagelist/ui/components/tabs";
+import { BookCover } from "@pagelist/ui/components/book-cover";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -120,19 +120,13 @@ function BookRow({ book }: { book: Book }) {
   return (
     <div className="flex items-center gap-4 rounded-lg border border-[var(--color-brand-border)] p-4 transition-colors hover:bg-[var(--color-brand-surface-raised)]">
       {/* Cover */}
-      <div className="relative h-16 w-12 shrink-0 overflow-hidden rounded-md bg-[var(--color-brand-primary)]/5">
-        {book.coverUrl ? (
-          <Image src={book.coverUrl} alt={book.title} fill unoptimized className="object-cover" sizes="48px" />
-        ) : (
-          <div className="flex h-full w-full items-center justify-center">
-            <span
-              className="text-[10px] font-medium text-[var(--color-brand-primary)]/40 leading-tight text-center px-1"
-              style={{ fontFamily: "var(--font-display), serif" }}
-            >
-              {book.title.slice(0, 20)}
-            </span>
-          </div>
-        )}
+      <div className="shrink-0">
+        <BookCover
+          coverUrl={book.coverUrl}
+          title={book.title}
+          size="sm"
+          className="h-16 w-12"
+        />
       </div>
 
       {/* Info */}

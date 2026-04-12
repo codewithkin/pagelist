@@ -1,11 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import Image from "next/image";
 import Link from "next/link";
 import { ExternalLink, ShoppingBag, Star, Tag, Loader2, Check, BookOpen, Globe } from "lucide-react";
 import { Dialog, DialogContent } from "@pagelist/ui/components/dialog";
 import { Button } from "@pagelist/ui/components/button";
+import { BookCover } from "@pagelist/ui/components/book-cover";
 import { cn } from "@pagelist/ui/lib/utils";
 import type { Book } from "@/types";
 import { useBookReviews, useLibraryBooks, usePurchaseBook } from "@/hooks/use-browse";
@@ -84,25 +84,11 @@ export function BookPreviewDialog({ book, onClose }: BookPreviewDialogProps) {
           {/* Cover column */}
           <div className="relative hidden sm:flex sm:w-[200px] shrink-0 flex-col">
             <div className="relative h-full min-h-[260px] w-full overflow-hidden">
-              {book.coverUrl ? (
-                <Image
-                  src={book.coverUrl}
-                  alt={book.title}
-                  fill
-                  unoptimized
-                  className="object-cover"
-                  sizes="200px"
-                />
-              ) : (
-                <div className="flex h-full w-full items-center justify-center bg-[var(--color-brand-primary)] p-6">
-                  <span
-                    className="text-center text-sm font-medium leading-snug text-white/80"
-                    style={{ fontFamily: "var(--font-display), 'Playfair Display', serif" }}
-                  >
-                    {book.title}
-                  </span>
-                </div>
-              )}
+              <BookCover
+                coverUrl={book.coverUrl}
+                title={book.title}
+                className="h-full w-full"
+              />
               {isOnSale && (
                 <div className="absolute left-0 top-4 rounded-r-full bg-red-500 px-3 py-0.5 text-[10px] font-bold uppercase tracking-widest text-white">
                   Sale
@@ -116,15 +102,11 @@ export function BookPreviewDialog({ book, onClose }: BookPreviewDialogProps) {
 
             {/* Mobile cover (small strip) */}
             <div className="relative h-36 w-full overflow-hidden rounded-xl sm:hidden">
-              {book.coverUrl ? (
-                <Image src={book.coverUrl} alt={book.title} fill className="object-cover" sizes="100vw" />
-              ) : (
-                <div className="flex h-full w-full items-center justify-center bg-[var(--color-brand-primary)]">
-                  <span className="px-4 text-center text-sm font-medium text-white/80">
-                    {book.title}
-                  </span>
-                </div>
-              )}
+              <BookCover
+                coverUrl={book.coverUrl}
+                title={book.title}
+                className="h-full w-full"
+              />
               {isOnSale && (
                 <div className="absolute left-0 top-3 rounded-r-full bg-red-500 px-3 py-0.5 text-[10px] font-bold uppercase tracking-widest text-white">
                   Sale

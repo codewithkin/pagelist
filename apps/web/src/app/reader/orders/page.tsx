@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import Image from "next/image";
 import { format } from "date-fns";
+import { BookCover } from "@pagelist/ui/components/book-cover";
 import { PageHeader } from "@/components/ui/page-header";
 import { EmptyState } from "@/components/ui/empty-state";
 import { LoadingSkeleton } from "@/components/ui/loading-skeleton";
@@ -33,22 +33,14 @@ export default function ReaderOrdersPage() {
               key={order.id}
               className="flex items-center gap-4 rounded-lg border border-[var(--color-brand-border)] bg-[var(--color-brand-surface-raised)] p-4"
             >
-              <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-md bg-[var(--color-brand-border)]">
-                {order.bookCoverUrl ? (
-                  <Image
-                    src={order.bookCoverUrl}
-                    alt={order.bookTitle}
-                    fill
-                    unoptimized
-                    className="object-cover"
-                    sizes="48px"
-                  />
-                ) : (
-                  <div className="flex h-full w-full items-center justify-center bg-[var(--color-brand-primary)]">
-                    <span className="text-[8px] font-medium text-white/70">PL</span>
-                  </div>
-                )}
-              </div>
+            <div className="shrink-0">
+              <BookCover
+                coverUrl={order.bookCoverUrl}
+                title={order.bookTitle}
+                size="sm"
+                className="h-12 w-8"
+              />
+            </div>
 
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-medium text-[var(--color-brand-primary)]">
