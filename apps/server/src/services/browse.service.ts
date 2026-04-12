@@ -8,8 +8,11 @@ export interface PublicBook {
   genre: string;
   language: string;
   price: number;
+  discountPrice: number | null;
   coverUrl: string | null;
   totalSales: number;
+  averageRating: number;
+  reviewCount: number;
   createdAt: string;
 }
 
@@ -18,23 +21,32 @@ export async function getPublishedBooks(): Promise<PublicBook[]> {
     where: { status: "PUBLISHED" },
     include: {
       author: { select: { name: true } },
-      _count: { select: { purchases: true } },
+      _count: { select: { purchases: true, reviews: true } },
+      reviews: { select: { rating: true } },
     },
     orderBy: { createdAt: "desc" },
   });
 
-  return books.map((b) => ({
-    id: b.id,
-    title: b.title,
-    author: b.author.name,
-    description: b.description,
-    genre: b.genre,
-    language: b.language,
-    price: b.priceCents / 100,
-    coverUrl: b.coverUrl,
-    totalSales: b._count.purchases,
-    createdAt: b.createdAt.toISOString(),
-  }));
+  return books.map((b) => {
+    const avg = b.reviews.length > 0
+      ? Math.round((b.reviews.reduce((s, r) => s + r.rating, 0) / b.reviews.length) * 10) / 10
+      : 0;
+    return {
+      id: b.id,
+      title: b.title,
+      author: b.author.name,
+      description: b.description,
+      genre: b.genre,
+      language: b.language,
+      price: b.priceCents / 100,
+      discountPrice: b.discountPriceCents !== null ? b.discountPriceCents / 100 : null,
+      coverUrl: b.coverUrl,
+      totalSales: b._count.purchases,
+      averageRating: avg,
+      reviewCount: b._count.reviews,
+      createdAt: b.createdAt.toISOString(),
+    };
+  });
 }
 
 export async function getPublishedBook(bookId: string): Promise<PublicBook | null> {
@@ -42,10 +54,14 @@ export async function getPublishedBook(bookId: string): Promise<PublicBook | nul
     where: { id: bookId, status: "PUBLISHED" },
     include: {
       author: { select: { name: true } },
-      _count: { select: { purchases: true } },
+      _count: { select: { purchases: true, reviews: true } },
+      reviews: { select: { rating: true } },
     },
   });
   if (!book) return null;
+  const avg = book.reviews.length > 0
+    ? Math.round((book.reviews.reduce((s, r) => s + r.rating, 0) / book.reviews.length) * 10) / 10
+    : 0;
   return {
     id: book.id,
     title: book.title,
@@ -54,8 +70,11 @@ export async function getPublishedBook(bookId: string): Promise<PublicBook | nul
     genre: book.genre,
     language: book.language,
     price: book.priceCents / 100,
+    discountPrice: book.discountPriceCents !== null ? book.discountPriceCents / 100 : null,
     coverUrl: book.coverUrl,
     totalSales: book._count.purchases,
+    averageRating: avg,
+    reviewCount: book._count.reviews,
     createdAt: book.createdAt.toISOString(),
   };
 }
@@ -116,8 +135,11 @@ export async function getReaderLibrary(readerId: string): Promise<
     genre: p.book.genre,
     language: p.book.language,
     price: p.book.priceCents / 100,
+    discountPrice: p.book.discountPriceCents !== null ? p.book.discountPriceCents / 100 : null,
     coverUrl: p.book.coverUrl,
     totalSales: p.book._count.purchases,
+    averageRating: 0,
+    reviewCount: 0,
     createdAt: p.book.createdAt.toISOString(),
     purchasedAt: p.createdAt.toISOString(),
   }));
@@ -133,7 +155,7 @@ export async function purchaseBook(readerId: string, bookId: string): Promise<Or
   if (existing) throw new Error("You already own this book.");
 
   const purchase = await prisma.purchase.create({
-    data: { readerId, bookId, amountPaid: book.priceCents },
+    data: { readerId, bookId, amountPaid: book.discountPriceCents ?? book.priceCents },
     include: {
       book: { include: { author: { select: { name: true } } } },
     },
