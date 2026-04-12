@@ -2,6 +2,18 @@ import { useQuery } from "@tanstack/react-query";
 import { apiGet } from "@/lib/api-client";
 import type { Book, BookDetail, BookSummary, Author, CatalogueResult, Review, ReviewStats } from "@/types";
 
+/* ── Best-selling books (landing page — top 15) ─────────────────── */
+
+export function useBestSellingBooks() {
+  return useQuery({
+    queryKey: ["public", "best-selling"],
+    queryFn: () =>
+      apiGet<CatalogueResult>("/api/public/catalogue?sort=best-selling&limit=15"),
+    staleTime: 5 * 60 * 1000,
+    retry: false,
+  });
+}
+
 /* ── Featured books (home page — latest 6) ─────────────────────── */
 
 export function useFeaturedBooks() {
