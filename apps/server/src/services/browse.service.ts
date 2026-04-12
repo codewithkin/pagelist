@@ -84,21 +84,25 @@ export async function getBookForReading(
   bookId: string,
   userId?: string | null,
 ): Promise<PublicBook | null> {
+  // Build the where clause based on auth status
+  const whereClause: Parameters<typeof prisma.book.findFirst>[0]["where"] = {
+    id: bookId,
+  };
+
+  if (userId) {
+    // Authenticated: can read published, their own books, or purchased books
+    whereClause.OR = [
+      { status: "PUBLISHED" },
+      { authorId: userId },
+      { purchases: { some: { readerId: userId } } },
+    ];
+  } else {
+    // Unauthenticated: can only read published books
+    whereClause.status = "PUBLISHED";
+  }
+
   const book = await prisma.book.findFirst({
-    where: {
-      id: bookId,
-      OR: [
-        { status: "PUBLISHED" }, // Anyone can read published books
-        userId
-          ? {
-              OR: [
-                { authorId: userId }, // Authors can read their own books
-                { purchases: { some: { readerId: userId } } }, // Readers can read purchased books
-              ],
-            }
-          : undefined,
-      ].filter(Boolean),
-    },
+    where: whereClause,
     include: {
       author: { select: { name: true } },
       _count: { select: { purchases: true, reviews: true } },

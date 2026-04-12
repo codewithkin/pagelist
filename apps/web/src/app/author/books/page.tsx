@@ -157,7 +157,7 @@ function BookRow({ book }: { book: Book }) {
 
       {/* Actions */}
       <DropdownMenu>
-        <DropdownMenuTrigger asChild>
+        <DropdownMenuTrigger asChild={false}>
           <button className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-[var(--color-brand-muted)] hover:bg-[var(--color-brand-surface)] transition-colors">
             <MoreHorizontal size={16} />
           </button>
