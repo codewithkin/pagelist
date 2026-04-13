@@ -1,5 +1,6 @@
 import prisma from "@pagelist/db";
 import { env } from "@pagelist/env/server";
+import { sendPurchaseReceiptEmail } from "./email.service";
 import {
   createPaynowClient,
   isPaidStatus,
@@ -137,6 +138,13 @@ export async function completePayment(
         select: {
           id: true,
           title: true,
+          coverUrl: true,
+        },
+      },
+      reader: {
+        select: {
+          name: true,
+          email: true,
         },
       },
     },
@@ -212,6 +220,16 @@ export async function completePayment(
 
     return createdPurchase;
   });
+
+  sendPurchaseReceiptEmail(
+    intermediatePayment.reader.email,
+    intermediatePayment.reader.name ?? "Reader",
+    intermediatePayment.book.title,
+    purchase.amountPaid / 100,
+    purchase.id,
+    intermediatePayment.book.id,
+    intermediatePayment.book.coverUrl,
+  ).catch(() => {});
 
   return {
     purchaseId: purchase.id,
