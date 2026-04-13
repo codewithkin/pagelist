@@ -2,6 +2,7 @@ import nodemailer from "nodemailer";
 import { env } from "@pagelist/env/server";
 
 let transporter: nodemailer.Transporter | null = null;
+let noReplyTransporter: nodemailer.Transporter | null = null;
 
 function getTransporter() {
   if (!transporter) {
@@ -20,6 +21,37 @@ function getTransporter() {
     });
   }
   return transporter;
+}
+
+function getNoReplyTransporter() {
+  if (!noReplyTransporter) {
+    // Fall back to default SMTP if dedicated no-reply vars aren't set
+    const host = env.NOREPLY_PAGELIST_SMTP_HOST || env.SMTP_HOST;
+    const port = env.NOREPLY_PAGELIST_SMTP_PORT || env.SMTP_PORT;
+    const user = env.NOREPLY_PAGELIST_SMTP_USER || env.SMTP_USER;
+    const pass = env.NOREPLY_PAGELIST_SMTP_PASS || env.SMTP_PASS;
+
+    if (!host || !port || !user || !pass) {
+      throw new Error("No-reply SMTP configuration is not set");
+    }
+
+    noReplyTransporter = nodemailer.createTransport({
+      host,
+      port,
+      secure: port === 465,
+      auth: { user, pass },
+    });
+  }
+  return noReplyTransporter;
+}
+
+function getNoReplyFrom() {
+  return (
+    env.NOREPLY_PAGELIST_SMTP_FROM ||
+    env.SMTP_FROM ||
+    env.NOREPLY_PAGELIST_SMTP_USER ||
+    env.SMTP_USER
+  );
 }
 
 function getVerificationEmailHTML(
@@ -189,136 +221,133 @@ function getPurchaseReceiptHTML(
     day: "numeric",
   });
   const shortOrderId = purchaseId.slice(0, 8).toUpperCase();
-  const displayName = userName.split(" ")[0] ?? userName;
+  const firstName = userName.split(" ")[0] ?? userName;
 
   const coverBlock = coverUrl
-    ? `<img src="${coverUrl}" alt="${bookTitle}" width="80" height="120" style="width:80px;height:120px;object-fit:cover;border-radius:6px;display:block;border:1px solid #D8CEC2;" />`
-    : `<div style="width:80px;height:120px;border-radius:6px;background-color:#1B3A2D;display:inline-block;vertical-align:top;"></div>`;
+    ? `<img src="${coverUrl}" alt="${bookTitle}" width="96" height="140" style="width:96px;height:140px;object-fit:cover;border-radius:8px;display:block;box-shadow:0 8px 24px rgba(0,0,0,0.35);" />`
+    : `<div style="width:96px;height:140px;border-radius:8px;background:linear-gradient(145deg,#2A4A38,#1B3A2D);display:block;box-shadow:0 8px 24px rgba(0,0,0,0.35);"></div>`;
 
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Your receipt from Pagelist</title>
+  <title>Your Pagelist receipt</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 </head>
-<body style="margin:0;padding:0;background-color:#E9DFD1;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Inter',sans-serif;">
+<body style="margin:0;padding:0;background-color:#E9DFD1;-webkit-text-size-adjust:100%;mso-line-height-rule:exactly;">
 
-  <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#E9DFD1;padding:40px 16px;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#E9DFD1;padding:48px 16px;">
     <tr>
       <td align="center">
 
-        <!-- Card -->
-        <table width="600" cellpadding="0" cellspacing="0" border="0" style="max-width:600px;width:100%;background-color:#F7F3EE;border-radius:16px;border:1px solid #D8CEC2;">
+        <!-- Outer card -->
+        <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;border-radius:20px;overflow:hidden;box-shadow:0 4px 40px rgba(22,19,18,0.10);">
+
+          <!-- ═══ DARK HEADER ══════════════════════════════════════ -->
           <tr>
-            <td>
-
-              <!-- Header -->
-              <table width="100%" cellpadding="0" cellspacing="0" border="0">
-                <tr>
-                  <td style="background-color:#FFFFFF;padding:28px 40px;border-bottom:1px solid #D8CEC2;border-radius:16px 16px 0 0;text-align:center;">
-                    <span style="font-size:22px;font-weight:600;color:#161312;letter-spacing:-0.5px;">pagelist</span>
-                  </td>
-                </tr>
-                <!-- Gold rule -->
-                <tr>
-                  <td style="height:3px;background-color:#D9A826;font-size:0;line-height:0;">&nbsp;</td>
-                </tr>
-              </table>
-
-              <!-- Hero -->
-              <table width="100%" cellpadding="0" cellspacing="0" border="0">
-                <tr>
-                  <td style="padding:44px 40px 32px 40px;text-align:center;">
-                    <p style="margin:0 0 10px 0;font-size:11px;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;color:#D9A826;">Purchase Confirmed</p>
-                    <h1 style="margin:0 0 12px 0;font-size:36px;font-weight:400;color:#161312;line-height:1.2;font-family:Georgia,'Times New Roman',serif;">Your book is ready.</h1>
-                    <p style="margin:0;font-size:15px;color:#4F463F;line-height:1.6;">Thank you, ${displayName}. Your order is confirmed and your book is waiting.</p>
-                  </td>
-                </tr>
-              </table>
-
-              <!-- Book block -->
-              <table width="100%" cellpadding="0" cellspacing="0" border="0">
-                <tr>
-                  <td style="padding:0 40px 32px 40px;">
-                    <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#FFFFFF;border:1px solid #D8CEC2;border-radius:12px;">
-                      <tr>
-                        <td width="104" valign="top" style="padding:24px 0 24px 24px;">
-                          ${coverBlock}
-                        </td>
-                        <td valign="middle" style="padding:24px;">
-                          <p style="margin:0 0 6px 0;font-size:11px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:#7A6F67;">Digital Book</p>
-                          <h2 style="margin:0 0 20px 0;font-size:20px;font-weight:500;color:#161312;line-height:1.3;font-family:Georgia,'Times New Roman',serif;">${bookTitle}</h2>
-                          <a href="${readUrl}" style="display:inline-block;background-color:#D9A826;color:#161312;padding:10px 24px;border-radius:8px;text-decoration:none;font-weight:600;font-size:13px;">Start Reading &rarr;</a>
-                        </td>
-                      </tr>
-                    </table>
-                  </td>
-                </tr>
-              </table>
-
-              <!-- Receipt table -->
-              <table width="100%" cellpadding="0" cellspacing="0" border="0">
-                <tr>
-                  <td style="padding:0 40px 32px 40px;">
-                    <table width="100%" cellpadding="0" cellspacing="0" border="0" style="border:1px solid #D8CEC2;border-radius:10px;overflow:hidden;">
-                      <tr style="background-color:#EFE7DD;">
-                        <td style="padding:10px 16px;font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:#4F463F;">Item</td>
-                        <td style="padding:10px 16px;font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:#4F463F;text-align:right;">Amount</td>
-                      </tr>
-                      <tr style="background-color:#FFFFFF;">
-                        <td style="padding:14px 16px;font-size:14px;color:#161312;border-top:1px solid #D8CEC2;">${bookTitle}</td>
-                        <td style="padding:14px 16px;font-size:14px;color:#161312;border-top:1px solid #D8CEC2;text-align:right;">${formattedAmount}</td>
-                      </tr>
-                      <tr style="background-color:#F7F3EE;">
-                        <td style="padding:14px 16px;font-size:14px;font-weight:600;color:#161312;border-top:1px solid #D8CEC2;">Total</td>
-                        <td style="padding:14px 16px;font-size:14px;font-weight:600;color:#161312;border-top:1px solid #D8CEC2;text-align:right;">${formattedAmount}</td>
-                      </tr>
-                    </table>
-                  </td>
-                </tr>
-              </table>
-
-              <!-- Order metadata -->
-              <table width="100%" cellpadding="0" cellspacing="0" border="0">
-                <tr>
-                  <td style="padding:0 40px 40px 40px;">
-                    <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#EFE7DD;border-radius:10px;">
-                      <tr>
-                        <td style="padding:16px 16px 8px 16px;">
-                          <table width="100%" cellpadding="0" cellspacing="0" border="0">
-                            <tr>
-                              <td style="font-size:12px;color:#7A6F67;padding:6px 0;">Order number</td>
-                              <td style="font-size:12px;color:#161312;font-weight:500;text-align:right;padding:6px 0;">#${shortOrderId}</td>
-                            </tr>
-                            <tr>
-                              <td style="font-size:12px;color:#7A6F67;padding:6px 0;border-top:1px solid #D8CEC2;">Date</td>
-                              <td style="font-size:12px;color:#161312;font-weight:500;text-align:right;padding:6px 0;border-top:1px solid #D8CEC2;">${orderDate}</td>
-                            </tr>
-                            <tr>
-                              <td style="font-size:12px;color:#7A6F67;padding:6px 0 8px 0;border-top:1px solid #D8CEC2;">Payment</td>
-                              <td style="font-size:12px;color:#161312;font-weight:500;text-align:right;padding:6px 0 8px 0;border-top:1px solid #D8CEC2;">Paynow</td>
-                            </tr>
-                          </table>
-                        </td>
-                      </tr>
-                    </table>
-                  </td>
-                </tr>
-              </table>
-
-              <!-- Footer -->
-              <table width="100%" cellpadding="0" cellspacing="0" border="0">
-                <tr>
-                  <td style="background-color:#EFE7DD;padding:24px 40px;border-top:1px solid #D8CEC2;border-radius:0 0 16px 16px;text-align:center;">
-                    <p style="margin:0 0 6px 0;font-size:12px;color:#7A6F67;">© 2026 Pagelist. All rights reserved.</p>
-                    <p style="margin:0;font-size:12px;color:#7A6F67;">Questions? Visit <a href="${frontendUrl}" style="color:#D9A826;text-decoration:none;">${frontendUrl.replace(/^https?:\/\//, "")}</a></p>
-                  </td>
-                </tr>
-              </table>
-
+            <td style="background-color:#161312;padding:36px 48px 0 48px;text-align:center;">
+              <!-- Wordmark -->
+              <p style="margin:0;font-family:'Inter',sans-serif;font-size:13px;font-weight:600;letter-spacing:0.25em;text-transform:uppercase;color:#D9A826;">pagelist</p>
+              <!-- Divider -->
+              <div style="width:32px;height:2px;background-color:#D9A826;margin:16px auto 0 auto;border-radius:1px;"></div>
             </td>
           </tr>
+
+          <!-- ═══ HERO (still dark background) ══════════════════════ -->
+          <tr>
+            <td style="background-color:#161312;padding:32px 48px 48px 48px;text-align:center;">
+              <p style="margin:0 0 14px 0;font-family:'Inter',sans-serif;font-size:11px;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;color:#7A6F67;">Order confirmed</p>
+              <h1 style="margin:0 0 16px 0;font-family:'Cormorant Garamond',Georgia,serif;font-size:48px;font-weight:400;font-style:italic;color:#F7F3EE;line-height:1.1;">Your book is ready.</h1>
+              <p style="margin:0;font-family:'Inter',sans-serif;font-size:15px;color:#C7B9AA;line-height:1.65;">Thank you, ${firstName}. Your purchase was successful<br>and your book is waiting in your library.</p>
+            </td>
+          </tr>
+
+          <!-- ═══ BOOK SHOWCASE ════════════════════════════════════ -->
+          <tr>
+            <td style="background-color:#F7F3EE;padding:40px 48px 32px 48px;">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#FFFFFF;border-radius:14px;border:1px solid #D8CEC2;overflow:hidden;">
+                <tr>
+                  <!-- Cover -->
+                  <td width="136" valign="top" style="padding:28px 0 28px 28px;">
+                    ${coverBlock}
+                  </td>
+                  <!-- Info -->
+                  <td valign="middle" style="padding:28px 28px 28px 24px;">
+                    <p style="margin:0 0 6px 0;font-family:'Inter',sans-serif;font-size:10px;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;color:#7A6F67;">Digital Edition</p>
+                    <h2 style="margin:0 0 8px 0;font-family:'Cormorant Garamond',Georgia,serif;font-size:24px;font-weight:600;color:#161312;line-height:1.25;">${bookTitle}</h2>
+                    <p style="margin:0 0 24px 0;font-family:'Inter',sans-serif;font-size:13px;color:#7A6F67;">PDF &bull; Unlimited access</p>
+                    <a href="${readUrl}" style="display:inline-block;background-color:#D9A826;color:#161312;padding:11px 26px;border-radius:8px;text-decoration:none;font-family:'Inter',sans-serif;font-weight:600;font-size:13px;letter-spacing:0.01em;">Start Reading &rarr;</a>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- ═══ RECEIPT TABLE ════════════════════════════════════ -->
+          <tr>
+            <td style="background-color:#F7F3EE;padding:0 48px 32px 48px;">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #D8CEC2;border-radius:12px;overflow:hidden;">
+                <!-- Header row -->
+                <tr>
+                  <td style="background-color:#EFE7DD;padding:11px 18px;font-family:'Inter',sans-serif;font-size:10px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:#4F463F;">Description</td>
+                  <td style="background-color:#EFE7DD;padding:11px 18px;font-family:'Inter',sans-serif;font-size:10px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:#4F463F;text-align:right;">Amount</td>
+                </tr>
+                <!-- Item row -->
+                <tr>
+                  <td style="background-color:#FFFFFF;padding:16px 18px;font-family:'Inter',sans-serif;font-size:14px;color:#161312;border-top:1px solid #D8CEC2;">${bookTitle}</td>
+                  <td style="background-color:#FFFFFF;padding:16px 18px;font-family:'Inter',sans-serif;font-size:14px;color:#161312;border-top:1px solid #D8CEC2;text-align:right;">${formattedAmount}</td>
+                </tr>
+                <!-- Total row -->
+                <tr>
+                  <td style="background-color:#F7F3EE;padding:14px 18px;font-family:'Inter',sans-serif;font-size:14px;font-weight:600;color:#161312;border-top:2px solid #C7B9AA;">Total charged</td>
+                  <td style="background-color:#F7F3EE;padding:14px 18px;font-family:'Cormorant Garamond',Georgia,serif;font-size:18px;font-weight:600;color:#161312;border-top:2px solid #C7B9AA;text-align:right;">${formattedAmount}</td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- ═══ ORDER DETAILS ════════════════════════════════════ -->
+          <tr>
+            <td style="background-color:#F7F3EE;padding:0 48px 40px 48px;">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#EFE7DD;border-radius:12px;border:1px solid #D8CEC2;">
+                <tr>
+                  <td style="padding:20px 22px;">
+                    <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                      <tr>
+                        <td style="font-family:'Inter',sans-serif;font-size:12px;color:#7A6F67;padding:5px 0;">Order</td>
+                        <td style="font-family:'Inter',sans-serif;font-size:12px;font-weight:600;color:#161312;text-align:right;padding:5px 0;letter-spacing:0.06em;">#${shortOrderId}</td>
+                      </tr>
+                      <tr>
+                        <td style="font-family:'Inter',sans-serif;font-size:12px;color:#7A6F67;padding:5px 0;border-top:1px solid #D8CEC2;">Date</td>
+                        <td style="font-family:'Inter',sans-serif;font-size:12px;font-weight:600;color:#161312;text-align:right;padding:5px 0;border-top:1px solid #D8CEC2;">${orderDate}</td>
+                      </tr>
+                      <tr>
+                        <td style="font-family:'Inter',sans-serif;font-size:12px;color:#7A6F67;padding:5px 0;border-top:1px solid #D8CEC2;">Payment method</td>
+                        <td style="font-family:'Inter',sans-serif;font-size:12px;font-weight:600;color:#161312;text-align:right;padding:5px 0;border-top:1px solid #D8CEC2;">Paynow</td>
+                      </tr>
+                      <tr>
+                        <td style="font-family:'Inter',sans-serif;font-size:12px;color:#7A6F67;padding:5px 0;border-top:1px solid #D8CEC2;">Access</td>
+                        <td style="font-family:'Inter',sans-serif;font-size:12px;font-weight:600;color:#161312;text-align:right;padding:5px 0;border-top:1px solid #D8CEC2;">Lifetime</td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- ═══ DARK FOOTER ══════════════════════════════════════ -->
+          <tr>
+            <td style="background-color:#161312;padding:28px 48px;text-align:center;">
+              <p style="margin:0 0 6px 0;font-family:'Inter',sans-serif;font-size:12px;color:#4F463F;">
+                Questions? <a href="${frontendUrl}" style="color:#D9A826;text-decoration:none;">${frontendUrl.replace(/^https?:\/\//, "")}</a>
+              </p>
+              <p style="margin:0;font-family:'Inter',sans-serif;font-size:11px;color:#4F463F;">© 2026 Pagelist &mdash; All rights reserved</p>
+            </td>
+          </tr>
+
         </table>
         <!-- /Card -->
 
@@ -339,17 +368,37 @@ export async function sendPurchaseReceiptEmail(
   bookId: string,
   coverUrl?: string | null,
 ): Promise<void> {
-  const transporter = getTransporter();
+  const noreplyTransporter = getNoReplyTransporter();
+  const from = getNoReplyFrom();
   const frontendUrl = env.FRONTEND_URL;
   const shortOrderId = purchaseId.slice(0, 8).toUpperCase();
 
-  const html = getPurchaseReceiptHTML(userName, bookTitle, amount, purchaseId, bookId, coverUrl, frontendUrl);
+  const html = getPurchaseReceiptHTML(
+    userName,
+    bookTitle,
+    amount,
+    purchaseId,
+    bookId,
+    coverUrl,
+    frontendUrl,
+  );
 
-  await transporter.sendMail({
-    from: env.SMTP_FROM || env.SMTP_USER,
+  await noreplyTransporter.sendMail({
+    from: from ? `Pagelist <${from}>` : "Pagelist",
     to: userEmail,
-    subject: `Your receipt for "${bookTitle}" — Pagelist`,
+    subject: `Your receipt — "${bookTitle}"`,
     html,
-    text: `Hi ${userName},\n\nThank you for your purchase!\n\n"${bookTitle}" — ${`$${amount.toFixed(2)}`}\n\nOrder #${shortOrderId}\n\nStart reading: ${frontendUrl}/reader/book/${bookId}\n\n— Pagelist`,
+    text: [
+      `Hi ${userName},`,
+      ``,
+      `Thank you for your purchase!`,
+      ``,
+      `"${bookTitle}" — $${amount.toFixed(2)}`,
+      `Order #${shortOrderId} · ${new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}`,
+      ``,
+      `Start reading: ${frontendUrl}/reader/book/${bookId}`,
+      ``,
+      `— Pagelist`,
+    ].join("\n"),
   });
 }
