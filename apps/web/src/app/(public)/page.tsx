@@ -2,9 +2,11 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { PublicBookCard } from "@/components/public-book-card";
 import { useBestSellingBooks } from "@/hooks/use-public";
+import { useSession } from "@/hooks/use-auth";
 
 const BOOKS_PER_PAGE = 4;
 
@@ -36,8 +38,23 @@ const TESTIMONIALS = [
 ];
 
 export default function LandingPage() {
+  const router = useRouter();
+  const { session } = useSession();
   const { data, isLoading } = useBestSellingBooks();
   const [page, setPage] = useState(0);
+
+  const handlePublishClick = () => {
+    // If not authenticated or is a reader, redirect to signup
+    if (!session || session.user.role === "READER") {
+      router.push("/signup");
+      return;
+    }
+
+    // If authenticated as author (WRITER), redirect to author books new page
+    if (session.user.role === "WRITER") {
+      router.push("/author/books/new");
+    }
+  };
 
   const books = data?.books ?? [];
   const totalPages = Math.ceil(Math.max(books.length, 1) / BOOKS_PER_PAGE);
@@ -69,12 +86,12 @@ export default function LandingPage() {
           >
             Browse books
           </Link>
-          <Link
-            href="/signup"
+          <button
+            onClick={handlePublishClick}
             className="rounded-full border border-[var(--color-brand-border)] px-7 py-3 text-sm font-medium text-[var(--color-brand-primary)] transition-colors hover:bg-[var(--color-brand-surface-raised)]"
           >
-            Publish Your Book
-          </Link>
+            Publish your book
+          </button>
         </div>
       </section>
 
