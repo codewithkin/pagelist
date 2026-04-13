@@ -53,26 +53,10 @@ export function BookCover({
           />
         </>
       ) : (
-        // Premium placeholder design
-        <div className="flex h-full w-full flex-col items-center justify-center gap-2 bg-gradient-to-b from-[var(--color-brand-surface-alt)] via-[var(--color-brand-surface)] to-[var(--color-brand-surface-alt)] p-4">
-          {/* Book icon/decoration */}
-          <svg
-            className="h-1/3 w-1/3 text-[var(--color-brand-muted)] opacity-30"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={1.5}
-              d="M12 6.253v13m0-13C6.5 6.253 2 10.753 2 17.753m20-11.5c0 4.478-2.096 8.5-4.8 11.15M12 6.253c5.5 0 10 4.5 10 10.5m-20-10.5v12c0 1.657 4.477 3 10 3s10-1.343 10-3v-12"
-            />
-          </svg>
-
-          {/* Book title in placeholder */}
+        // Fallback: solid brand background with centered title
+        <div className="flex h-full w-full items-center justify-center bg-[var(--color-brand-primary)] p-4">
           <p
-            className="line-clamp-3 text-center text-xs font-medium leading-tight text-[var(--color-brand-primary)]"
+            className="line-clamp-3 text-center text-sm font-medium leading-tight text-white/80"
             style={{ fontFamily: "var(--font-display, 'Playfair Display'), serif" }}
           >
             {title}

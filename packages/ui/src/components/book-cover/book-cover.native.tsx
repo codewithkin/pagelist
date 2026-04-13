@@ -42,14 +42,10 @@ export function BookCover({
           onError={handleImageError}
         />
       ) : (
-        // Premium placeholder design
-        <View className="h-full w-full flex-col items-center justify-center gap-2 bg-gradient-to-b from-[var(--color-brand-surface-alt)] via-[var(--color-brand-surface)] to-[var(--color-brand-surface-alt)] p-4">
-          {/* Book icon - simple text representation */}
-          <Text className="text-lg text-[var(--color-brand-muted)] opacity-30">📖</Text>
-
-          {/* Book title in placeholder */}
+        // Fallback: solid brand background with centered title
+        <View className="h-full w-full items-center justify-center bg-[var(--color-brand-primary)] p-4">
           <Text
-            className="text-center text-xs font-medium leading-tight text-[var(--color-brand-primary)]"
+            className="text-center text-sm font-medium leading-tight text-white/80"
             numberOfLines={3}
             style={{ fontFamily: "var(--font-display, 'Playfair Display'), serif" }}
           >
