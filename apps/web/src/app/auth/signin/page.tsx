@@ -9,23 +9,29 @@ import { Button } from "@pagelist/ui/components/button";
 import { Input } from "@pagelist/ui/components/input";
 import { Label } from "@pagelist/ui/components/label";
 import { useSignIn } from "@/hooks/use-auth";
+import { useResendVerificationEmail } from "@/hooks/use-email-verification";
+import { ApiError } from "@/lib/api-client";
 
 export default function SignInPage() {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [resendSuccess, setResendSuccess] = useState(false);
 
   const { mutate: signIn, isPending, error } = useSignIn();
+  const { mutate: resendVerification, isPending: isResending } = useResendVerificationEmail();
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    setResendSuccess(false);
     signIn(
       { email, password },
       { onSuccess: () => router.push("/") },
     );
   }
 
+  const isUnverifiedError = error instanceof ApiError && error.status === 403;
   const errorMessage =
     error instanceof Error ? error.message : error ? "Invalid email or password." : null;
 
@@ -46,7 +52,26 @@ export default function SignInPage() {
       <form onSubmit={handleSubmit} className="space-y-5">
         {errorMessage && (
           <div className="rounded-xl border border-destructive/30 bg-destructive/5 px-4 py-3 text-xs text-destructive">
-            {errorMessage}
+            <p>{errorMessage}</p>
+            {isUnverifiedError && (
+              <p className="mt-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    resendVerification(email, {
+                      onSuccess: () => {
+                        setResendSuccess(true);
+                        setTimeout(() => setResendSuccess(false), 4000);
+                      },
+                    });
+                  }}
+                  disabled={isResending || resendSuccess || !email}
+                  className="font-medium underline underline-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-opacity"
+                >
+                  {isResending ? "Sending..." : resendSuccess ? "Sent! Check your inbox." : "Resend verification email"}
+                </button>
+              </p>
+            )}
           </div>
         )}
 

@@ -143,19 +143,18 @@ export async function handleSignIn(c: Context) {
     setTokenCookie(c, session.token, new Date(session.expiresAt));
     return ok(c, { session }, "Welcome back!");
   } catch (e) {
-    let message = "Invalid email or password. Please try again.";
     const errorMsg = e instanceof Error ? e.message : String(e);
-    
+
     console.error(`[Sign-in Error] Email: ${parsed.data.email}, Error: ${errorMsg}`);
-    
+
     if (errorMsg.includes("verify")) {
-      message = "Please verify your email before signing in. Check your inbox for the verification link.";
-    } else if (errorMsg.includes("Invalid")) {
-      message = "Invalid email or password. Please try again.";
-    } else {
-      message = errorMsg;
+      return err(
+        c,
+        "Please verify your email before signing in. Check your inbox for the verification link.",
+        403,
+      );
     }
-    return err(c, message, 401);
+    return err(c, "Invalid email or password. Please try again.", 401);
   }
 }
 
