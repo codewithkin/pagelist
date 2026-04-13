@@ -10,6 +10,7 @@ export interface PublicBook {
   price: number;
   discountPrice: number | null;
   coverUrl: string | null;
+  fileUrl: string | null;
   totalSales: number;
   averageRating: number;
   reviewCount: number;
@@ -72,6 +73,7 @@ export async function getPublishedBook(bookId: string): Promise<PublicBook | nul
     price: book.priceCents / 100,
     discountPrice: book.discountPriceCents !== null ? book.discountPriceCents / 100 : null,
     coverUrl: book.coverUrl,
+    fileUrl: book.fileUrl,
     totalSales: book._count.purchases,
     averageRating: avg,
     reviewCount: book._count.reviews,
@@ -121,6 +123,7 @@ export async function getBookForReading(
     price: book.priceCents / 100,
     discountPrice: book.discountPriceCents !== null ? book.discountPriceCents / 100 : null,
     coverUrl: book.coverUrl,
+    fileUrl: book.fileUrl,
     totalSales: book._count.purchases,
     averageRating: avg,
     reviewCount: book._count.reviews,
