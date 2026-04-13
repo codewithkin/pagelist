@@ -61,7 +61,7 @@ export function PublicFooter() {
             Navigate
           </p>
           <Link href="/browse" className="text-sm text-[var(--color-brand-muted)] transition-colors hover:text-[var(--color-brand-primary)]">
-            Browse Books
+            Browse books
           </Link>
           <Link href="/about" className="text-sm text-[var(--color-brand-muted)] transition-colors hover:text-[var(--color-brand-primary)]">
             About

@@ -136,7 +136,7 @@ export default function AboutPage() {
             href="/browse"
             className="rounded-full bg-[var(--color-brand-primary)] px-6 py-2.5 text-sm font-medium text-white transition-opacity hover:opacity-90"
           >
-            Browse Books
+            Browse books
           </Link>
           <Link
             href="/contact"

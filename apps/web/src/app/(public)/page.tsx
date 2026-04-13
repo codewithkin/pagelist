@@ -67,7 +67,7 @@ export default function LandingPage() {
             href="/browse"
             className="rounded-full bg-[var(--color-brand-primary)] px-7 py-3 text-sm font-medium text-white transition-opacity hover:opacity-90"
           >
-            Browse Books
+            Browse books
           </Link>
           <Link
             href="/signup"

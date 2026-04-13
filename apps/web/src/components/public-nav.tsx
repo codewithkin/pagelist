@@ -9,7 +9,7 @@ import { Sheet, SheetContent, SheetTrigger } from "@pagelist/ui/components/sheet
 import { useSession } from "@/hooks/use-auth";
 
 const NAV_LINKS = [
-  { href: "/browse", label: "Browse Books" },
+  { href: "/browse", label: "Browse books" },
   { href: "/about", label: "About" },
   { href: "/contact", label: "Contact" },
 ] as const;
@@ -44,7 +44,7 @@ export function PublicNav() {
               key={link.href}
               href={link.href}
               className={cn(
-                "text-sm font-medium tracking-wide uppercase transition-colors",
+                "text-sm font-medium tracking-wide transition-colors",
                 pathname === link.href || pathname.startsWith(link.href + "/")
                   ? "text-[var(--color-brand-primary)]"
                   : "text-[var(--color-brand-muted)] hover:text-[var(--color-brand-primary)]",
