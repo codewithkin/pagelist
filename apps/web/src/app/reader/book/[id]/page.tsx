@@ -75,49 +75,6 @@ export default function ReaderBookPage({ params }: { params: Promise<{ id: strin
   const [fontSizeIndex, setFontSizeIndex] = useState(1);
   const [scrollProgress, setScrollProgress] = useState(0);
 
-  // If we have a PDF file URL, display it in fullscreen
-  if (!isLoading && !error && fileUrl) {
-    return (
-      <div className="min-h-svh flex flex-col bg-[var(--color-brand-surface)]">
-        {/* Progress bar */}
-        <div className="h-1 bg-[var(--color-brand-border)]">
-          <div
-            className="h-full bg-[var(--color-brand-primary)]"
-            style={{ width: `${scrollProgress}%` }}
-          />
-        </div>
-
-        {/* Top bar */}
-        <header className="sticky top-0 z-40 bg-[var(--color-brand-surface)]/95 backdrop-blur-sm border-b border-[var(--color-brand-border)]">
-          <div className="mx-auto flex h-14 max-w-full items-center justify-between px-4">
-            <p
-              className="truncate text-sm font-medium text-[var(--color-brand-primary)]"
-              style={{ fontFamily: "var(--font-display), serif" }}
-            >
-              {title}
-            </p>
-            <Link
-              href={ROUTES.READER_LIBRARY}
-              className="inline-flex items-center gap-1 text-xs text-[var(--color-brand-muted)] hover:text-[var(--color-brand-primary)] transition-colors"
-            >
-              <ArrowLeft size={14} />
-              Back to Library
-            </Link>
-          </div>
-        </header>
-
-        {/* PDF Viewer */}
-        <div className="flex-1 overflow-hidden">
-          <iframe
-            src={`${fileUrl}#toolbar=1&view=FitH`}
-            className="w-full h-full border-0"
-            title={title}
-          />
-        </div>
-      </div>
-    );
-  }
-
   // Restore reading position
   useEffect(() => {
     const saved = localStorage.getItem(`${STORAGE_KEY_PREFIX}${id}`);
@@ -206,6 +163,49 @@ export default function ReaderBookPage({ params }: { params: Promise<{ id: strin
         >
           Back to Library
         </Link>
+      </div>
+    );
+  }
+
+  // If we have a PDF file URL, display it in fullscreen
+  if (!isLoading && !error && fileUrl) {
+    return (
+      <div className="min-h-svh flex flex-col bg-[var(--color-brand-surface)]">
+        {/* Progress bar */}
+        <div className="h-1 bg-[var(--color-brand-border)]">
+          <div
+            className="h-full bg-[var(--color-brand-primary)]"
+            style={{ width: `${scrollProgress}%` }}
+          />
+        </div>
+
+        {/* Top bar */}
+        <header className="sticky top-0 z-40 bg-[var(--color-brand-surface)]/95 backdrop-blur-sm border-b border-[var(--color-brand-border)]">
+          <div className="mx-auto flex h-14 max-w-full items-center justify-between px-4">
+            <p
+              className="truncate text-sm font-medium text-[var(--color-brand-primary)]"
+              style={{ fontFamily: "var(--font-display), serif" }}
+            >
+              {title}
+            </p>
+            <Link
+              href={ROUTES.READER_LIBRARY}
+              className="inline-flex items-center gap-1 text-xs text-[var(--color-brand-muted)] hover:text-[var(--color-brand-primary)] transition-colors"
+            >
+              <ArrowLeft size={14} />
+              Back to Library
+            </Link>
+          </div>
+        </header>
+
+        {/* PDF Viewer */}
+        <div className="flex-1 overflow-hidden">
+          <iframe
+            src={`${fileUrl}#toolbar=1&view=FitH`}
+            className="w-full h-full border-0"
+            title={title}
+          />
+        </div>
       </div>
     );
   }
