@@ -10,16 +10,19 @@ function getTransporter() {
       throw new Error("SMTP configuration is not set");
     }
 
+    const isImplicitTLS = env.SMTP_PORT === 465;
+
     transporter = nodemailer.createTransport({
       host: env.SMTP_HOST,
       port: env.SMTP_PORT,
-      secure: env.SMTP_PORT === 465,
+      secure: isImplicitTLS,
+      requireTLS: !isImplicitTLS, // Port 587 needs STARTTLS
       auth: {
         user: env.SMTP_USER,
         pass: env.SMTP_PASS,
       },
-      connectionTimeout: 10000,
-      socketTimeout: 10000,
+      connectionTimeout: 15000,
+      socketTimeout: 15000,
     });
   }
   return transporter;
@@ -33,9 +36,12 @@ function getNoReplyTransporter() {
     const user = env.NOREPLY_PAGELIST_SMTP_USER || env.SMTP_USER;
     const pass = env.NOREPLY_PAGELIST_SMTP_PASS || env.SMTP_PASS;
 
+    const isImplicitTLS = port === 465;
+
     console.log("[Email] Initializing no-reply transporter with:", {
       host: host ? `${host}:${port}` : "NOT SET",
       user: user ? `${user.substring(0, 3)}***` : "NOT SET",
+      tls: isImplicitTLS ? "implicit (465)" : "STARTTLS (587)",
       usingDedicated: !!(env.NOREPLY_PAGELIST_SMTP_HOST),
     });
 
@@ -46,10 +52,11 @@ function getNoReplyTransporter() {
     noReplyTransporter = nodemailer.createTransport({
       host,
       port,
-      secure: port === 465,
+      secure: isImplicitTLS,
+      requireTLS: !isImplicitTLS,
       auth: { user, pass },
-      connectionTimeout: 10000,
-      socketTimeout: 10000,
+      connectionTimeout: 15000,
+      socketTimeout: 15000,
     });
   }
   return noReplyTransporter;

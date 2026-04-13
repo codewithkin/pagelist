@@ -64,7 +64,11 @@ export async function initiateSignUp(
     verificationToken,
     verificationBaseUrl,
   ).catch((e) => {
-    console.error("Failed to send verification email:", e);
+    const err = e instanceof Error ? e : new Error(String(e));
+    console.error(
+      `[Email Error] Failed to send verification email to ${user.email}: ${err.message}`,
+      { code: (e as any)?.code, command: (e as any)?.command }
+    );
   });
 
   return {
@@ -137,7 +141,11 @@ export async function resendVerificationEmail(
 
   // Fire-and-forget: don't await so the response is returned immediately.
   sendVerificationEmail(user.email, user.name, verificationToken, verificationBaseUrl).catch((e) => {
-    console.error("Failed to resend verification email:", e);
+    const err = e instanceof Error ? e : new Error(String(e));
+    console.error(
+      `[Email Error] Failed to resend verification email to ${user.email}: ${err.message}`,
+      { code: (e as any)?.code, command: (e as any)?.command }
+    );
   });
 
   return { message: "Verification email sent. Please check your inbox." };
@@ -289,7 +297,11 @@ export async function requestPasswordReset(
 
   // Fire-and-forget: don't await so the response is returned immediately.
   sendPasswordResetEmail(user.email, user.name, resetToken, baseUrl).catch((e) => {
-    console.error("Failed to send password reset email:", e);
+    const err = e instanceof Error ? e : new Error(String(e));
+    console.error(
+      `[Email Error] Failed to send password reset email to ${user.email}: ${err.message}`,
+      { code: (e as any)?.code, command: (e as any)?.command }
+    );
   });
 }
 
