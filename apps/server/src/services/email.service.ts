@@ -9,36 +9,54 @@ async function testSMTPConnectivity(host: string, port: number): Promise<void> {
   try {
     console.log(`[SMTP Diagnostics] Testing DNS resolution for ${host}...`);
     const addresses = await dns.resolve4(host);
-    console.log(`[SMTP Diagnostics] DNS resolved ${host} to: ${addresses.join(", ")}`);
+    console.log(`[SMTP Diagnostics] ✓ DNS resolved ${host} to: ${addresses.join(", ")}`);
   } catch (e) {
     const err = e instanceof Error ? e.message : String(e);
-    console.error(`[SMTP Diagnostics] DNS resolution FAILED for ${host}: ${err}`);
+    console.error(`[SMTP Diagnostics] ✗ DNS resolution FAILED for ${host}: ${err}`);
+    return;
   }
 
   try {
     console.log(`[SMTP Diagnostics] Testing TCP connection to ${host}:${port}...`);
     const net = await import("net");
-    const socket = net.createConnection({ host, port, timeout: 5000 });
-
+    
     await new Promise<void>((resolve, reject) => {
-      socket.on("connect", () => {
-        console.log(`[SMTP Diagnostics] TCP connection successful to ${host}:${port}`);
+      const socket = net.createConnection({ 
+        host, 
+        port, 
+        timeout: 5000,
+        family: 4, // Use IPv4
+      });
+
+      const onConnect = () => {
+        console.log(`[SMTP Diagnostics] ✓ TCP connection successful to ${host}:${port}`);
         socket.destroy();
         resolve();
-      });
-      socket.on("timeout", () => {
-        console.error(`[SMTP Diagnostics] TCP connection timeout to ${host}:${port}`);
+      };
+
+      const onError = (err: Error) => {
+        console.error(`[SMTP Diagnostics] ✗ TCP connection error to ${host}:${port}: ${err.message}`);
+        reject(err);
+      };
+
+      const onTimeout = () => {
+        console.error(`[SMTP Diagnostics] ✗ TCP connection timeout to ${host}:${port} (5s)`);
         socket.destroy();
         reject(new Error("TCP connection timeout"));
-      });
-      socket.on("error", (e) => {
-        console.error(`[SMTP Diagnostics] TCP connection error to ${host}:${port}: ${e.message}`);
-        reject(e);
+      };
+
+      socket.once("connect", onConnect);
+      socket.once("error", onError);
+      socket.once("timeout", onTimeout);
+
+      // Ensure socket is destroyed after completion
+      socket.on("close", () => {
+        socket.removeAllListeners();
       });
     });
   } catch (e) {
     const err = e instanceof Error ? e.message : String(e);
-    console.error(`[SMTP Diagnostics] Connection test failed: ${err}`);
+    console.error(`[SMTP Diagnostics] ✗ TCP connection test failed: ${err}`);
   }
 }
 
@@ -58,11 +76,6 @@ function getTransporter() {
       timeouts: "15s connection / 15s socket",
     });
 
-    // Test connectivity in background (don't block transporter creation)
-    testSMTPConnectivity(env.SMTP_HOST, env.SMTP_PORT).catch(() => {
-      // Connection test failed, but we'll still try to send emails
-    });
-
     transporter = nodemailer.createTransport({
       host: env.SMTP_HOST,
       port: env.SMTP_PORT,
@@ -74,6 +87,17 @@ function getTransporter() {
       },
       connectionTimeout: 15000,
       socketTimeout: 15000,
+    });
+
+    // Run diagnostics in background
+    (async () => {
+      try {
+        await testSMTPConnectivity(env.SMTP_HOST, env.SMTP_PORT);
+      } catch (e) {
+        // Diagnostics failed but logged the issue
+      }
+    })().catch(() => {
+      // Ignore any uncaught errors
     });
   }
   return transporter;
@@ -120,6 +144,36 @@ function getNoReplyFrom() {
     env.NOREPLY_PAGELIST_SMTP_USER ||
     env.SMTP_USER
   );
+}
+
+/**
+ * Wraps sendMail with a timeout to prevent indefinite hangs.
+ */
+async function sendMailWithTimeout(
+  transporter: nodemailer.Transporter,
+  mailOptions: nodemailer.SendMailOptions,
+  timeoutMs: number = 20000,
+): Promise<nodemailer.SentMessageInfo> {
+  let timedOut = false;
+  
+  const timeoutPromise = new Promise<never>((_, reject) => {
+    const timer = setTimeout(() => {
+      timedOut = true;
+      reject(new Error(`Email send operation timed out after ${timeoutMs}ms`));
+    }, timeoutMs);
+    
+    // Ensure timer is cleared if the send completes
+    return () => clearTimeout(timer);
+  });
+
+  try {
+    return await Promise.race([transporter.sendMail(mailOptions), timeoutPromise]);
+  } catch (e) {
+    if (timedOut) {
+      console.error(`[Email] Send operation exceeded ${timeoutMs}ms timeout`);
+    }
+    throw e;
+  }
 }
 
 function getVerificationEmailHTML(
@@ -190,20 +244,21 @@ export async function sendVerificationEmail(
   const startTime = Date.now();
 
   try {
-    const info = await transporter.sendMail({
+    const info = await sendMailWithTimeout(transporter, {
       from: env.SMTP_FROM || env.SMTP_USER,
       to: userEmail,
       subject: "Verify your Pagelist account",
       html,
       text: `Welcome to Pagelist! Please verify your email by visiting: ${verificationLink}. This link expires in 5 minutes.`,
-    });
+    }, 20000);
+    
     const duration = Date.now() - startTime;
-    console.log(`[Email] Verification email sent to ${userEmail} in ${duration}ms. Message ID: ${info.messageId}`);
+    console.log(`[Email] ✓ Verification email sent to ${userEmail} in ${duration}ms. Message ID: ${info.messageId}`);
   } catch (e) {
     const duration = Date.now() - startTime;
     const err = e instanceof Error ? e : new Error(String(e));
     console.error(
-      `[Email] Failed to send verification email to ${userEmail} after ${duration}ms: ${err.message}`,
+      `[Email] ✗ Failed to send verification email to ${userEmail} after ${duration}ms: ${err.message}`,
       { code: (e as any)?.code, command: (e as any)?.command, errno: (e as any)?.errno }
     );
     throw e;
@@ -282,20 +337,21 @@ export async function sendPasswordResetEmail(
   const startTime = Date.now();
 
   try {
-    const info = await transporter.sendMail({
+    const info = await sendMailWithTimeout(transporter, {
       from: env.SMTP_FROM || env.SMTP_USER,
       to: userEmail,
       subject: "Reset your Pagelist password",
       html,
       text: `Hello ${userName},\n\nWe received a request to reset your Pagelist password. Visit the following link to choose a new password:\n\n${resetLink}\n\nThis link expires in 15 minutes. If you did not request this, please ignore this email.`,
-    });
+    }, 20000);
+    
     const duration = Date.now() - startTime;
-    console.log(`[Email] Password reset email sent to ${userEmail} in ${duration}ms. Message ID: ${info.messageId}`);
+    console.log(`[Email] ✓ Password reset email sent to ${userEmail} in ${duration}ms. Message ID: ${info.messageId}`);
   } catch (e) {
     const duration = Date.now() - startTime;
     const err = e instanceof Error ? e : new Error(String(e));
     console.error(
-      `[Email] Failed to send password reset email to ${userEmail} after ${duration}ms: ${err.message}`,
+      `[Email] ✗ Failed to send password reset email to ${userEmail} after ${duration}ms: ${err.message}`,
       { code: (e as any)?.code, command: (e as any)?.command, errno: (e as any)?.errno }
     );
     throw e;
