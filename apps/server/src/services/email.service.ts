@@ -1,8 +1,46 @@
 import nodemailer from "nodemailer";
 import { env } from "@pagelist/env/server";
+import dns from "dns/promises";
 
 let transporter: nodemailer.Transporter | null = null;
 let noReplyTransporter: nodemailer.Transporter | null = null;
+
+async function testSMTPConnectivity(host: string, port: number): Promise<void> {
+  try {
+    console.log(`[SMTP Diagnostics] Testing DNS resolution for ${host}...`);
+    const addresses = await dns.resolve4(host);
+    console.log(`[SMTP Diagnostics] DNS resolved ${host} to: ${addresses.join(", ")}`);
+  } catch (e) {
+    const err = e instanceof Error ? e.message : String(e);
+    console.error(`[SMTP Diagnostics] DNS resolution FAILED for ${host}: ${err}`);
+  }
+
+  try {
+    console.log(`[SMTP Diagnostics] Testing TCP connection to ${host}:${port}...`);
+    const net = await import("net");
+    const socket = net.createConnection({ host, port, timeout: 5000 });
+
+    await new Promise<void>((resolve, reject) => {
+      socket.on("connect", () => {
+        console.log(`[SMTP Diagnostics] TCP connection successful to ${host}:${port}`);
+        socket.destroy();
+        resolve();
+      });
+      socket.on("timeout", () => {
+        console.error(`[SMTP Diagnostics] TCP connection timeout to ${host}:${port}`);
+        socket.destroy();
+        reject(new Error("TCP connection timeout"));
+      });
+      socket.on("error", (e) => {
+        console.error(`[SMTP Diagnostics] TCP connection error to ${host}:${port}: ${e.message}`);
+        reject(e);
+      });
+    });
+  } catch (e) {
+    const err = e instanceof Error ? e.message : String(e);
+    console.error(`[SMTP Diagnostics] Connection test failed: ${err}`);
+  }
+}
 
 function getTransporter() {
   if (!transporter) {
@@ -12,11 +50,24 @@ function getTransporter() {
 
     const isImplicitTLS = env.SMTP_PORT === 465;
 
+    console.log("[Email] Initializing transporter with:", {
+      host: env.SMTP_HOST,
+      port: env.SMTP_PORT,
+      user: env.SMTP_USER ? `${env.SMTP_USER.substring(0, 3)}***` : "NOT SET",
+      tls: isImplicitTLS ? "implicit (465)" : "STARTTLS (587)",
+      timeouts: "15s connection / 15s socket",
+    });
+
+    // Test connectivity in background (don't block transporter creation)
+    testSMTPConnectivity(env.SMTP_HOST, env.SMTP_PORT).catch(() => {
+      // Connection test failed, but we'll still try to send emails
+    });
+
     transporter = nodemailer.createTransport({
       host: env.SMTP_HOST,
       port: env.SMTP_PORT,
       secure: isImplicitTLS,
-      requireTLS: !isImplicitTLS, // Port 587 needs STARTTLS
+      requireTLS: !isImplicitTLS,
       auth: {
         user: env.SMTP_USER,
         pass: env.SMTP_PASS,
@@ -135,13 +186,28 @@ export async function sendVerificationEmail(
 
   const html = getVerificationEmailHTML(userName, verificationLink);
 
-  await transporter.sendMail({
-    from: env.SMTP_FROM || env.SMTP_USER,
-    to: userEmail,
-    subject: "Verify your Pagelist account",
-    html,
-    text: `Welcome to Pagelist! Please verify your email by visiting: ${verificationLink}. This link expires in 5 minutes.`,
-  });
+  console.log(`[Email] Sending verification email to ${userEmail}...`);
+  const startTime = Date.now();
+
+  try {
+    const info = await transporter.sendMail({
+      from: env.SMTP_FROM || env.SMTP_USER,
+      to: userEmail,
+      subject: "Verify your Pagelist account",
+      html,
+      text: `Welcome to Pagelist! Please verify your email by visiting: ${verificationLink}. This link expires in 5 minutes.`,
+    });
+    const duration = Date.now() - startTime;
+    console.log(`[Email] Verification email sent to ${userEmail} in ${duration}ms. Message ID: ${info.messageId}`);
+  } catch (e) {
+    const duration = Date.now() - startTime;
+    const err = e instanceof Error ? e : new Error(String(e));
+    console.error(
+      `[Email] Failed to send verification email to ${userEmail} after ${duration}ms: ${err.message}`,
+      { code: (e as any)?.code, command: (e as any)?.command, errno: (e as any)?.errno }
+    );
+    throw e;
+  }
 }
 
 function getPasswordResetEmailHTML(
@@ -212,13 +278,28 @@ export async function sendPasswordResetEmail(
   const resetLink = `${baseUrl}/auth/reset-password?token=${resetToken}`;
   const html = getPasswordResetEmailHTML(userName, resetLink);
 
-  await transporter.sendMail({
-    from: env.SMTP_FROM || env.SMTP_USER,
-    to: userEmail,
-    subject: "Reset your Pagelist password",
-    html,
-    text: `Hello ${userName},\n\nWe received a request to reset your Pagelist password. Visit the following link to choose a new password:\n\n${resetLink}\n\nThis link expires in 15 minutes. If you did not request this, please ignore this email.`,
-  });
+  console.log(`[Email] Sending password reset email to ${userEmail}...`);
+  const startTime = Date.now();
+
+  try {
+    const info = await transporter.sendMail({
+      from: env.SMTP_FROM || env.SMTP_USER,
+      to: userEmail,
+      subject: "Reset your Pagelist password",
+      html,
+      text: `Hello ${userName},\n\nWe received a request to reset your Pagelist password. Visit the following link to choose a new password:\n\n${resetLink}\n\nThis link expires in 15 minutes. If you did not request this, please ignore this email.`,
+    });
+    const duration = Date.now() - startTime;
+    console.log(`[Email] Password reset email sent to ${userEmail} in ${duration}ms. Message ID: ${info.messageId}`);
+  } catch (e) {
+    const duration = Date.now() - startTime;
+    const err = e instanceof Error ? e : new Error(String(e));
+    console.error(
+      `[Email] Failed to send password reset email to ${userEmail} after ${duration}ms: ${err.message}`,
+      { code: (e as any)?.code, command: (e as any)?.command, errno: (e as any)?.errno }
+    );
+    throw e;
+  }
 }
 
 function getPurchaseReceiptHTML(
