@@ -31,6 +31,12 @@ function getNoReplyTransporter() {
     const user = env.NOREPLY_PAGELIST_SMTP_USER || env.SMTP_USER;
     const pass = env.NOREPLY_PAGELIST_SMTP_PASS || env.SMTP_PASS;
 
+    console.log("[Email] Initializing no-reply transporter with:", {
+      host: host ? `${host}:${port}` : "NOT SET",
+      user: user ? `${user.substring(0, 3)}***` : "NOT SET",
+      usingDedicated: !!(env.NOREPLY_PAGELIST_SMTP_HOST),
+    });
+
     if (!host || !port || !user || !pass) {
       throw new Error("No-reply SMTP configuration is not set");
     }
@@ -368,8 +374,23 @@ export async function sendPurchaseReceiptEmail(
   bookId: string,
   coverUrl?: string | null,
 ): Promise<void> {
-  const noreplyTransporter = getNoReplyTransporter();
+  console.log("[Email] Sending purchase receipt email to:", userEmail);
+
+  let noreplyTransporter;
+  try {
+    noreplyTransporter = getNoReplyTransporter();
+    console.log("[Email] No-reply transporter initialized successfully");
+  } catch (error) {
+    console.error(
+      "[Email] Failed to initialize no-reply transporter:",
+      error instanceof Error ? error.message : String(error),
+    );
+    throw error;
+  }
+
   const from = getNoReplyFrom();
+  console.log("[Email] 'From' address resolved to:", from);
+
   const frontendUrl = env.FRONTEND_URL;
   const shortOrderId = purchaseId.slice(0, 8).toUpperCase();
 
@@ -382,6 +403,8 @@ export async function sendPurchaseReceiptEmail(
     coverUrl,
     frontendUrl,
   );
+
+  console.log("[Email] Sending email with subject:", `Your receipt — "${bookTitle}"`);
 
   await noreplyTransporter.sendMail({
     from: from ? `Pagelist <${from}>` : "Pagelist",

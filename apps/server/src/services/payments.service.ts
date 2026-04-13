@@ -229,7 +229,16 @@ export async function completePayment(
     purchase.id,
     intermediatePayment.book.id,
     intermediatePayment.book.coverUrl,
-  ).catch(() => {});
+  ).catch((error) => {
+    console.error(
+      "[Email Error] Failed to send purchase receipt email:",
+      JSON.stringify({
+        to: intermediatePayment.reader.email,
+        subject: `Your receipt for "${intermediatePayment.book.title}" — Pagelist`,
+        error: error instanceof Error ? error.message : String(error),
+      }),
+    );
+  });
 
   return {
     purchaseId: purchase.id,
