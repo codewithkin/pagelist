@@ -20,24 +20,32 @@ const FONT_SIZES = [
 
 // Fetch book content from API
 function useBookContent(id: string) {
-  const [data, setData] = useState<{ title: string; chapters: Array<{ title: string; content: string }> } | null>(null);
+  const [data, setData] = useState<{ title: string; fileUrl: string | null; chapters: Array<{ title: string; content: string }> } | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     (async () => {
       try {
-        const book = await apiGet<{ title: string }>(`/api/browse/${id}`);
-        // TODO: Fetch actual chapters from backend
-        // For now, return demo chapters
-        setData({
-          title: book.title,
-          chapters: [
-            { title: "Chapter 1", content: "<p>Start reading the content of chapter one here...</p>" },
-            { title: "Chapter 2", content: "<p>Continue with chapter two...</p>" },
-            { title: "Chapter 3", content: "<p>More content in chapter three...</p>" },
-          ],
-        });
+        const book = await apiGet<{ title: string; fileUrl: string | null }>(`/api/browse/${id}`);
+        
+        // If there's a PDF file URL, use it
+        if (book.fileUrl) {
+          setData({
+            title: book.title,
+            fileUrl: book.fileUrl,
+            chapters: [],
+          });
+        } else {
+          // Fallback if no PDF available
+          setData({
+            title: book.title,
+            fileUrl: null,
+            chapters: [
+              { title: "Chapter 1", content: "<p>No content available for this book yet.</p>" },
+            ],
+          });
+        }
         setError(null);
       } catch (e) {
         if (e instanceof ApiError) {
@@ -56,16 +64,59 @@ function useBookContent(id: string) {
     })();
   }, [id]);
 
-  return { title: data?.title ?? "", chapters: data?.chapters ?? [], isLoading, error };
+  return { title: data?.title ?? "", fileUrl: data?.fileUrl ?? null, chapters: data?.chapters ?? [], isLoading, error };
 }
 
 export default function ReaderBookPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
-  const { title, chapters, isLoading, error } = useBookContent(id);
+  const { title, fileUrl, chapters, isLoading, error } = useBookContent(id);
 
   const [chapterIndex, setChapterIndex] = useState(0);
   const [fontSizeIndex, setFontSizeIndex] = useState(1);
   const [scrollProgress, setScrollProgress] = useState(0);
+
+  // If we have a PDF file URL, display it in fullscreen
+  if (!isLoading && !error && fileUrl) {
+    return (
+      <div className="min-h-svh flex flex-col bg-[var(--color-brand-surface)]">
+        {/* Progress bar */}
+        <div className="h-1 bg-[var(--color-brand-border)]">
+          <div
+            className="h-full bg-[var(--color-brand-primary)]"
+            style={{ width: `${scrollProgress}%` }}
+          />
+        </div>
+
+        {/* Top bar */}
+        <header className="sticky top-0 z-40 bg-[var(--color-brand-surface)]/95 backdrop-blur-sm border-b border-[var(--color-brand-border)]">
+          <div className="mx-auto flex h-14 max-w-full items-center justify-between px-4">
+            <p
+              className="truncate text-sm font-medium text-[var(--color-brand-primary)]"
+              style={{ fontFamily: "var(--font-display), serif" }}
+            >
+              {title}
+            </p>
+            <Link
+              href={ROUTES.READER_LIBRARY}
+              className="inline-flex items-center gap-1 text-xs text-[var(--color-brand-muted)] hover:text-[var(--color-brand-primary)] transition-colors"
+            >
+              <ArrowLeft size={14} />
+              Back to Library
+            </Link>
+          </div>
+        </header>
+
+        {/* PDF Viewer */}
+        <div className="flex-1 overflow-hidden">
+          <iframe
+            src={`${fileUrl}#toolbar=1&view=FitH`}
+            className="w-full h-full border-0"
+            title={title}
+          />
+        </div>
+      </div>
+    );
+  }
 
   // Restore reading position
   useEffect(() => {
