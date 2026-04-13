@@ -18,6 +18,8 @@ function getTransporter() {
         user: env.SMTP_USER,
         pass: env.SMTP_PASS,
       },
+      connectionTimeout: 10000,
+      socketTimeout: 10000,
     });
   }
   return transporter;
@@ -46,6 +48,8 @@ function getNoReplyTransporter() {
       port,
       secure: port === 465,
       auth: { user, pass },
+      connectionTimeout: 10000,
+      socketTimeout: 10000,
     });
   }
   return noReplyTransporter;

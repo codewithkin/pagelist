@@ -56,17 +56,16 @@ export async function initiateSignUp(
     },
   });
 
-  try {
-    await sendVerificationEmail(
-      user.email,
-      user.name,
-      verificationToken,
-      verificationBaseUrl,
-    );
-  } catch (e) {
-    // Log but don't throw — allow signup to complete even if email fails
+  // Fire-and-forget: don't await so the response is returned immediately.
+  // SMTP hangs can otherwise cause the request to 504.
+  sendVerificationEmail(
+    user.email,
+    user.name,
+    verificationToken,
+    verificationBaseUrl,
+  ).catch((e) => {
     console.error("Failed to send verification email:", e);
-  }
+  });
 
   return {
     email: user.email,
@@ -136,11 +135,10 @@ export async function resendVerificationEmail(
     },
   });
 
-  try {
-    await sendVerificationEmail(user.email, user.name, verificationToken, verificationBaseUrl);
-  } catch (e) {
-    console.error("Failed to send verification email:", e);
-  }
+  // Fire-and-forget: don't await so the response is returned immediately.
+  sendVerificationEmail(user.email, user.name, verificationToken, verificationBaseUrl).catch((e) => {
+    console.error("Failed to resend verification email:", e);
+  });
 
   return { message: "Verification email sent. Please check your inbox." };
 }
@@ -289,11 +287,10 @@ export async function requestPasswordReset(
     },
   });
 
-  try {
-    await sendPasswordResetEmail(user.email, user.name, resetToken, baseUrl);
-  } catch (e) {
+  // Fire-and-forget: don't await so the response is returned immediately.
+  sendPasswordResetEmail(user.email, user.name, resetToken, baseUrl).catch((e) => {
     console.error("Failed to send password reset email:", e);
-  }
+  });
 }
 
 /**
