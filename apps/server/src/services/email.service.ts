@@ -1,4 +1,5 @@
 import nodemailer from "nodemailer";
+import PDFDocument from "pdfkit";
 import { env } from "@pagelist/env/server";
 
 let transporter: nodemailer.Transporter | null = null;
@@ -365,6 +366,168 @@ function getPurchaseReceiptHTML(
 </html>`;
 }
 
+function generatePurchaseReceiptPDF(
+  userName: string,
+  bookTitle: string,
+  amount: number,
+  purchaseId: string,
+  bookId: string,
+  frontendUrl: string,
+): Buffer {
+  return new Promise<Buffer>((resolve, reject) => {
+    const doc = new PDFDocument({ size: "A4", margin: 40 });
+    const chunks: Buffer[] = [];
+
+    doc.on("data", (chunk: Buffer) => chunks.push(chunk));
+    doc.on("end", () => {
+      resolve(Buffer.concat(chunks));
+    });
+    doc.on("error", (error) => {
+      reject(error);
+    });
+
+    // Colors
+    const darkBg = "#161312";
+    const warmText = "#D9A826";
+    const textColor = "#161312";
+    const lightBg = "#F7F3EE";
+    const borderColor = "#D8CEC2";
+
+    const firstName = userName.split(" ")[0] ?? userName;
+    const orderDate = new Date().toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
+    const shortOrderId = purchaseId.slice(0, 8).toUpperCase();
+
+    // Header with dark background effect (simulate with filled rect)
+    doc.fillColor(darkBg).rect(0, 0, doc.page.width, 100).fill();
+
+    // Logo/Title
+    doc.fillColor(warmText).fontSize(28).font("Helvetica-Bold").text("PAGELIST", 40, 30);
+
+    // Divider line
+    doc.strokeColor(warmText).lineWidth(0.5).moveTo(40, 85).lineTo(doc.page.width - 40, 85).stroke();
+
+    // Reset for content
+    doc.y = 120;
+
+    // Hero section
+    doc.fillColor(textColor)
+      .fontSize(32)
+      .font("Helvetica-Bold")
+      .text("Your book is ready.", { align: "left" });
+
+    doc.fontSize(14).font("Helvetica").fillColor("#4F463F").text(`Thank you, ${firstName}.`, {
+      align: "left",
+    });
+
+    doc.fontSize(11)
+      .fillColor("#7A6F67")
+      .text(
+        "Your purchase was successful and your digital book is now available to read anytime.",
+        { align: "left" },
+      );
+
+    doc.y += 20;
+
+    // Book details box border
+    doc.rect(40, doc.y, doc.page.width - 80, 120).stroke();
+
+    doc.y += 15;
+
+    // Book title and info
+    doc.fillColor(textColor)
+      .fontSize(14)
+      .font("Helvetica-Bold")
+      .text(bookTitle, 55, doc.y, { width: doc.page.width - 110 });
+
+    doc.fontSize(10)
+      .font("Helvetica")
+      .fillColor("#7A6F67")
+      .text("Digital Edition", { align: "left" });
+
+    doc.y += 50;
+
+    // CTA Button (text representation)
+    doc.fillColor(warmText)
+      .font("Helvetica-Bold")
+      .fontSize(11)
+      .text("→ START READING", { align: "left" });
+
+    doc.y = doc.y + 50;
+
+    // Receipt table header
+    doc.fillColor(lightBg)
+      .rect(40, doc.y, doc.page.width - 80, 25)
+      .fill();
+
+    doc
+      .fillColor(textColor)
+      .fontSize(11)
+      .font("Helvetica-Bold")
+      .text("Item", 55, doc.y + 7, { width: 300 });
+
+    doc.text("Amount", doc.page.width - 130, doc.y + 7, { align: "right", width: 80 });
+
+    // Book item row
+    doc.y += 25;
+    doc.fillColor("#FFFFFF").rect(40, doc.y, doc.page.width - 80, 30).fill();
+
+    doc
+      .fillColor(textColor)
+      .fontSize(10)
+      .font("Helvetica")
+      .text(bookTitle, 55, doc.y + 7, { width: 300 });
+
+    doc.fontSize(10).text(`$${amount.toFixed(2)}`, doc.page.width - 130, doc.y + 7, {
+      align: "right",
+      width: 80,
+    });
+
+    // Total row
+    doc.y += 30;
+    doc.fillColor("#EFE7DD").rect(40, doc.y, doc.page.width - 80, 35).fill();
+
+    doc.fillColor(textColor).fontSize(12).font("Helvetica-Bold").text("Total", 55, doc.y + 8);
+
+    doc.fontSize(18).text(`$${amount.toFixed(2)}`, doc.page.width - 130, doc.y + 5, {
+      align: "right",
+      width: 80,
+    });
+
+    // Order details section
+    doc.y += 50;
+    doc.fillColor("#EFE7DD").rect(40, doc.y, doc.page.width - 80, 80).fill();
+
+    doc.y += 12;
+    doc.fillColor(textColor)
+      .fontSize(11)
+      .font("Helvetica-Bold")
+      .text(`Order #${shortOrderId}`, 55);
+
+    doc.fontSize(10)
+      .font("Helvetica")
+      .fillColor("#7A6F67");
+    doc.text(`Date: ${orderDate}`, 55);
+    doc.text("Payment Method: Paynow", 55);
+    doc.text("Access: Lifetime", 55);
+
+    // Footer
+    doc.y = doc.page.height - 50;
+    doc
+      .fillColor("#7A6F67")
+      .fontSize(9)
+      .font("Helvetica")
+      .text("© 2026 Pagelist. All rights reserved.", { align: "center" });
+
+    doc.text(`Read your book: ${frontendUrl}/reader/book/${bookId}`, { align: "center" });
+
+    doc.end();
+  });
+}
+
 export async function sendPurchaseReceiptEmail(
   userEmail: string,
   userName: string,
@@ -406,7 +569,28 @@ export async function sendPurchaseReceiptEmail(
 
   console.log("[Email] Sending email with subject:", `Your receipt — "${bookTitle}"`);
 
-  await noreplyTransporter.sendMail({
+  // Generate PDF receipt
+  let pdfBuffer: Buffer | undefined;
+  try {
+    console.log("[Email] Generating PDF receipt...");
+    pdfBuffer = await generatePurchaseReceiptPDF(
+      userName,
+      bookTitle,
+      amount,
+      purchaseId,
+      bookId,
+      frontendUrl,
+    );
+    console.log("[Email] PDF receipt generated successfully");
+  } catch (error) {
+    console.error(
+      "[Email] Failed to generate PDF receipt:",
+      error instanceof Error ? error.message : String(error),
+    );
+    // Continue without PDF if generation fails
+  }
+
+  const mailOptions: nodemailer.SendMailOptions = {
     from: from ? `Pagelist <${from}>` : "Pagelist",
     to: userEmail,
     subject: `Your receipt — "${bookTitle}"`,
@@ -423,5 +607,18 @@ export async function sendPurchaseReceiptEmail(
       ``,
       `— Pagelist`,
     ].join("\n"),
-  });
+  };
+
+  // Add PDF attachment if generation was successful
+  if (pdfBuffer) {
+    mailOptions.attachments = [
+      {
+        filename: `pagelist-receipt-${shortOrderId}.pdf`,
+        content: pdfBuffer,
+        contentType: "application/pdf",
+      },
+    ];
+  }
+
+  await noreplyTransporter.sendMail(mailOptions);
 }

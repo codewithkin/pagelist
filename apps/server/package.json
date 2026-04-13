@@ -18,12 +18,14 @@
     "dotenv": "catalog:",
     "hono": "^4.8.2",
     "nodemailer": "^6.9.7",
+    "pdfkit": "^0.14.0",
     "zod": "catalog:"
   },
   "devDependencies": {
     "typescript": "^5",
     "tsdown": "^0.16.5",
     "@pagelist/config": "workspace:*",
-    "@types/bun": "catalog:"
+    "@types/bun": "catalog:",
+    "@types/pdfkit": "^0.12.11"
   }
 }
