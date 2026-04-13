@@ -42,7 +42,7 @@ function useBookContent(id: string) {
             title: book.title,
             fileUrl: null,
             chapters: [
-              { title: "Chapter 1", content: "<p>No content available for this book yet.</p>" },
+              { title: "No Content", content: "<p>This book doesn't have content available yet. Please upload a PDF file.</p>" },
             ],
           });
         }
