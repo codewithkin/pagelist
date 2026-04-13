@@ -41,8 +41,13 @@ app.use(
     origin: (origin) => {
       // In development, allow localhost with any port
       if (origin?.includes("localhost")) return origin || "*";
-      // Allow the configured origin
+      // Allow the primary configured origin
       if (origin === env.CORS_ORIGIN) return origin;
+      // Allow additional origins from comma-separated CORS_ORIGIN_EXTRA env var
+      if (env.CORS_ORIGIN_EXTRA) {
+        const extras = env.CORS_ORIGIN_EXTRA.split(",").map((o) => o.trim());
+        if (extras.includes(origin ?? "")) return origin;
+      }
       return undefined;
     },
     credentials: true,
