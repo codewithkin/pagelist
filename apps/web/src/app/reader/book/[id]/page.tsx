@@ -2,11 +2,12 @@
 
 import { useState, useEffect, useCallback, use } from "react";
 import Link from "next/link";
-import { ArrowLeft, ChevronLeft, ChevronRight, Minus, Plus } from "lucide-react";
+import { ArrowLeft, ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@pagelist/ui/lib/utils";
 import { Button } from "@pagelist/ui/components/button";
 import { ApiError, apiGet } from "@/lib/api-client";
 import { ROUTES } from "@/lib/routes";
+import { PDFReader } from "@/components/pdf-reader";
 
 const STORAGE_KEY_PREFIX = "pagelist-reader-";
 
@@ -167,20 +168,20 @@ export default function ReaderBookPage({ params }: { params: Promise<{ id: strin
     );
   }
 
-  // If we have a PDF file URL, display it in fullscreen
+  // If we have a PDF file URL, display with PDF.js renderer
   if (!isLoading && !error && fileUrl) {
     return (
-      <div className="min-h-svh flex flex-col bg-[var(--color-brand-surface)]">
+      <div className="h-svh flex flex-col bg-[var(--color-brand-surface)]">
         {/* Progress bar */}
         <div className="h-1 bg-[var(--color-brand-border)]">
           <div
-            className="h-full bg-[var(--color-brand-primary)]"
+            className="h-full bg-[var(--color-brand-primary)] transition-[width] duration-300"
             style={{ width: `${scrollProgress}%` }}
           />
         </div>
 
         {/* Top bar */}
-        <header className="sticky top-0 z-40 bg-[var(--color-brand-surface)]/95 backdrop-blur-sm border-b border-[var(--color-brand-border)]">
+        <header className="z-40 border-b border-[var(--color-brand-border)] bg-[var(--color-brand-surface)]/95 backdrop-blur-sm">
           <div className="mx-auto flex h-14 max-w-full items-center justify-between px-4">
             <p
               className="truncate text-sm font-medium text-[var(--color-brand-primary)]"
@@ -190,7 +191,7 @@ export default function ReaderBookPage({ params }: { params: Promise<{ id: strin
             </p>
             <Link
               href={ROUTES.READER_LIBRARY}
-              className="inline-flex items-center gap-1 text-xs text-[var(--color-brand-muted)] hover:text-[var(--color-brand-primary)] transition-colors"
+              className="inline-flex items-center gap-1 text-xs text-[var(--color-brand-muted)] transition-colors hover:text-[var(--color-brand-primary)]"
             >
               <ArrowLeft size={14} />
               Back to Library
@@ -198,12 +199,13 @@ export default function ReaderBookPage({ params }: { params: Promise<{ id: strin
           </div>
         </header>
 
-        {/* PDF Viewer */}
-        <div className="flex-1 overflow-hidden">
-          <iframe
-            src={`${fileUrl}#toolbar=1&view=FitH`}
-            className="w-full h-full border-0"
-            title={title}
+        {/* PDF Viewer — fills remaining viewport height */}
+        <div className="min-h-0 flex-1">
+          <PDFReader
+            fileUrl={fileUrl}
+            onPageChange={(page, total) =>
+              setScrollProgress(total > 0 ? (page / total) * 100 : 0)
+            }
           />
         </div>
       </div>

@@ -16,6 +16,14 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  webpack: (config) => {
+    // Prevent pdfjs-dist from importing the canvas module in browser environments.
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      canvas: false,
+    };
+    return config;
+  },
 };
 
 export default nextConfig;
