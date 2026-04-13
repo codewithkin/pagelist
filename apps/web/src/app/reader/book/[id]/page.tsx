@@ -1,23 +1,13 @@
 "use client";
 
-import dynamic from "next/dynamic";
 import { useState, useEffect, useCallback, use } from "react";
 import Link from "next/link";
-import { ArrowLeft, ChevronLeft, ChevronRight } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { cn } from "@pagelist/ui/lib/utils";
 import { Button } from "@pagelist/ui/components/button";
 import { ApiError, apiGet } from "@/lib/api-client";
 import { ROUTES } from "@/lib/routes";
-
-// Dynamically import PDFReader with ssr: false to prevent server-side DOM errors
-const PDFReader = dynamic(() => import("@/components/pdf-reader").then((mod) => ({ default: mod.PDFReader })), {
-  ssr: false,
-  loading: () => (
-    <div className="flex h-full items-center justify-center bg-[var(--color-brand-surface)]">
-      <div className="h-5 w-5 animate-spin rounded-full border-2 border-[var(--color-brand-primary)] border-t-transparent" />
-    </div>
-  ),
-});
+import { PDFReader } from "@/components/pdf-reader";
 
 const STORAGE_KEY_PREFIX = "pagelist-reader-";
 
