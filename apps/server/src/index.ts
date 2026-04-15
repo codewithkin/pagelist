@@ -46,6 +46,20 @@ app.use(
   }),
 );
 
+// Ensure CORS headers are present on all responses
+app.use("/*", async (c, next) => {
+  c.header("Access-Control-Allow-Origin", "*");
+  c.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, PATCH, OPTIONS");
+  c.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
+  await next();
+});
+
+// Increase payload size limit for file uploads (100MB)
+app.use("/api/upload/*", async (c, next) => {
+  c.env.incoming_message_max_size = 104857600; // 100MB
+  await next();
+});
+
 app.route("/api/auth", authRouter);
 app.route("/api/onboarding", onboardingRouter);
 app.route("/api/workspace", workspaceRouter);
