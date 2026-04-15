@@ -26,7 +26,7 @@ export function setAuthToken(token: string | null) {
 
 export const apiClient = axios.create({
   baseURL: env.NEXT_PUBLIC_SERVER_URL,
-  withCredentials: true,
+  withCredentials: false,
   headers: {
     "Content-Type": "application/json",
   },
