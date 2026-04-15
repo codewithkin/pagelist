@@ -45,7 +45,7 @@ app.use(
     credentials: false,
   }),
 );
-
+ 
 // Ensure CORS headers are present on all responses
 app.use("/*", async (c, next) => {
   c.header("Access-Control-Allow-Origin", "*");
