@@ -8,7 +8,7 @@ export function createAuthClient(baseURL: string) {
     try {
       const res = await fetch(`${baseURL}${path}`, {
         ...options,
-        credentials: "include",
+        credentials: "omit",
         headers: {
           "Content-Type": "application/json",
           ...(options.headers as Record<string, string> | undefined),         
